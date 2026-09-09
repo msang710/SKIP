@@ -22,6 +22,18 @@ This repository contains the current development source. Runtime gate enforcemen
 
 # English
 
+## Built for real work: QuickHack
+
+**SKIP's developer uses this workflow to build QuickHack, a device-level ERP/WMS for their own work.** QuickHack connects receiving, inspection, purchasing, inventory, sales-channel orders, shipping, and returns through PG and IMEI identifiers.
+
+Its manual order-allocation workflow depends on domain judgments: a customer-requested device may differ from the original offer, a replacement must release the previous device and reserve the new one together, and packing already in progress takes priority over a manual change.
+
+Those decisions appear in [actual requirements](examples/quickhack/prd.md), [user stories](examples/quickhack/user_stories.md), [system design](examples/quickhack/system_design.md), and [implementation tasks](examples/quickhack/tasks.md). The [QuickHack case study](examples/quickhack/README.md) connects them to implementation and test source, retaining the recorded verification gaps.
+
+**This is what “domain experts building tools for their own work” looks like:** the human defines business exceptions and priorities; the agent carries them into system behavior.
+
+[View the QuickHack repository on GitHub](https://github.com/msang710/QuickHack_Public_Portfolio)
+
 ## Why SKIP exists
 
 Coding agents can already write more code than many users can realistically review.
@@ -310,7 +322,7 @@ If the agent cannot establish sufficient evidence within its reasoning or contex
 
 SKIP is especially useful for:
 
-- domain experts building tools for their own work,
+- domain experts building tools for their own work ([QuickHack example](examples/quickhack/README.md)),
 - operators and analysts automating business processes,
 - non-traditional developers working with coding agents,
 - solo builders who can define desired behavior more easily than architecture,
@@ -540,7 +552,7 @@ Current-state records live under:
 
 The record store may contain detailed development history and should be treated as private project data unless deliberately prepared for publication.
 
-A public distribution of SKIP should ship the workflow, retrieval logic, documentation, tests, and synthetic examples — **not the author's real project records.**
+A public distribution of SKIP ships workflow code, documentation, tests, and synthetic examples. Original project records stay private. Real-document excerpts may be published only after selecting and reviewing their disclosure scope, as in the [QuickHack case study](examples/quickhack/README.md).
 
 ## Philosophy
 
@@ -580,6 +592,18 @@ SKIP exists for that problem.
 사람의 집중력은 정말 사람이 결정해야 하는 것에 사용합니다. **의도, 제품 결정, 승인, 위험, 검증 결과**입니다.
 
 현재 Codex Skill ID는 `skip`이며 `$skip`으로 호출합니다.
+
+## 실제 업무 도구 개발 사례: QuickHack
+
+**SKIP 개발자는 자신의 업무 문제를 해결하는 기기 단위 ERP/WMS, QuickHack을 이 워크플로로 개발하고 있습니다.** QuickHack은 PG·IMEI를 기준으로 입고, 검수, 매입, 재고, 판매채널 주문, 송장, 배송, 반품을 연결합니다.
+
+수동 주문 매칭에는 현업의 판단이 필요합니다. 고객이 요청한 기기는 판매 오퍼 조건과 달라도 허용할 수 있고, 교체할 때 이전 기기 해제와 새 기기 예약은 함께 성공해야 하며, 이미 진행 중인 포장은 수동 변경보다 우선해야 합니다.
+
+이 결정이 [실제 요구사항](examples/quickhack/prd.md), [사용자 스토리](examples/quickhack/user_stories.md), [시스템 설계](examples/quickhack/system_design.md), [실행 작업](examples/quickhack/tasks.md)으로 이어집니다. [QuickHack 개발 사례](examples/quickhack/README.md)에서 구현 코드와 테스트 소스까지 확인할 수 있으며, 기록에 남은 미검증 범위도 함께 표시했습니다.
+
+**“자신의 업무 문제를 직접 해결하고 싶은 도메인 전문가”를 위한 워크플로가 어떤 모습인지 보여주는 사례입니다.** 사람은 업무의 예외와 우선순위를 결정하고, 에이전트는 이를 시스템 동작으로 옮깁니다.
+
+[QuickHack GitHub 저장소 보기](https://github.com/msang710/QuickHack_Public_Portfolio)
 
 ## 왜 SKIP을 만들었는가
 
@@ -867,7 +891,7 @@ SKIP은 이런 한계를 없애지 않습니다.
 
 특히 다음과 같은 사람에게 잘 맞습니다.
 
-- 자신의 업무 문제를 직접 해결하고 싶은 도메인 전문가,
+- 자신의 업무 문제를 직접 해결하고 싶은 도메인 전문가([QuickHack 실제 사례](examples/quickhack/README.md)),
 - 프로세스를 자동화하려는 운영자와 분석가,
 - 전통적인 개발자가 아니지만 코딩 에이전트로 소프트웨어를 만드는 사람,
 - 아키텍처보다 원하는 동작을 더 정확히 설명할 수 있는 1인 제작자,
@@ -1055,7 +1079,7 @@ Linux 기본 경로는 `~/.local/share/SKIP`이며 `$XDG_DATA_HOME`이 있으면
 
 Record store에는 실제 개발 이력이 세밀하게 남을 수 있으므로, 공개를 목적으로 따로 준비하지 않았다면 **개인 프로젝트 데이터로 취급해야 합니다.**
 
-SKIP의 공개 배포판에는 workflow, retrieval logic, 문서, 테스트, synthetic example을 포함할 수 있지만 **작성자의 실제 `records/`는 포함하지 않는 것**을 원칙으로 합니다.
+SKIP의 공개 배포판에는 workflow, retrieval logic, 문서, 테스트, synthetic example을 포함합니다. **원본 프로젝트 기록은 비공개로 유지합니다.** 실제 문서 발췌본은 공개할 범위를 선택하고 검토한 뒤 포함할 수 있습니다. [QuickHack 개발 사례](examples/quickhack/README.md)가 그 형식입니다.
 
 ## Workflow prepare와 결과 보고
 

@@ -357,6 +357,7 @@ Narrow, reversible changes may use a compact flow.
 | `prepare` | Request depth, selected document context, current authorization, source snapshot and next action | Read-only coordination; `prepared` is not permission or completion |
 | `report` | `workflow-result/v1` as brief/detail/JSON, preserving unresolved evidence | Supplied evidence is rendered, not executed or independently verified |
 | Session cache | Optional host-owned cache of document parsing fragments | No cached authority, conversation, source verification or runtime evidence; ordinary CLI is uncached |
+| Paseo plugin | SKIP Records panel, invocation/record attachment sources, exact-record attachment and Decision Inbox | Source in `plugins/paseo`; requires a separately configured Paseo daemon; no write interception |
 
 ### Workflow preparation and reports
 
@@ -411,9 +412,41 @@ python3 scripts/intent_context.py --help    # Deterministic backend commands
 
 The natural-language terminal form emits a request envelope; it does not start an agent. No global `skip` command is installed by cloning this repository.
 
+## Paseo plugin
+
+The companion plugin is included at [`plugins/paseo`](plugins/paseo). Its manifest ID remains `intent-launcher` to preserve existing installations.
+
+It registers the **SKIP Records** workspace/explorer panel, **Open SKIP Records** command, invocation and record attachment sources, record preview/exact-document attachment, and a goal-scoped Decision Inbox. When direct panel attachment is unavailable, it provides a portable `$skip` caller. The invocation parser validates SKIP options; it is part of this plugin's `intent.server.ts`.
+
+From the SKIP repository root:
+
+```bash
+npm --prefix plugins/paseo ci
+npm --prefix plugins/paseo test
+npm --prefix plugins/paseo run typecheck
+```
+
+The bundled plugin passes **18 tests** and `tsc --noEmit` on Node.js 24.18.1 using its checked-in lockfile. These checks do not establish live GUI behavior.
+
+To install the source on a daemon where trusted plugins have been enabled:
+
+```bash
+paseo plugin install /absolute/path/to/SKIP/plugins/paseo
+```
+
+Installation and reload are separate operator actions. This plugin runs as trusted daemon-side code and can read the configured record store. No personal records or `node_modules` are bundled.
+
+| Daemon environment | Purpose / default |
+|---|---|
+| `INTENT_TO_CODE_RECORD_ROOT` | Record root; defaults to `$XDG_DATA_HOME/SKIP` or `~/.local/share/SKIP` |
+| `INTENT_TO_CODE_WORKSPACE_REGISTRY` | Paseo-to-record project bindings; defaults to `$XDG_CONFIG_HOME/intent-to-code/workspaces.yaml` or `~/.config/intent-to-code/workspaces.yaml` |
+| `SKIP_RUNTIME_SCRIPT` | Python backend for Decision Inbox; defaults to `~/.agents/skills/skip/scripts/intent_context.py` |
+
+The record project and its `bindings.paseo` entry must already exist. Configure overrides in the daemon's environment. The plugin's project resolver currently uses that exact registry binding; it does not implement every fallback provided by the Python selector. New `prepare/report` UI integration and host write interception are not included. Type declarations support local checks; Paseo supplies the plugin SDK at runtime. Desktop/mobile GUI acceptance requires a separate host check after installation.
+
 ## Remaining integration work
 
-Project rules, Context Pack compilation and the workflow preparation layer are implemented. Host-specific record viewers, context attachment UIs, and write/deploy interception belong to separate adapters. A source checkout does not install a Paseo plugin, provide universal IDE integration, or establish `host-enforced` guarantees. No such adapter is shipped here.
+Project rules, Context Pack compilation, workflow preparation, and the Paseo plugin source are included. Cloning this repository does not install or reload that plugin. Other IDE adapters, `prepare/report` integration into the plugin UI, and host write/deploy interception remain separate work. No `host-enforced` adapter is bundled.
 
 ### Known development gap
 
@@ -877,6 +910,7 @@ SKIP은 이런 한계를 없애지 않습니다.
 | `prepare` | 요청 깊이, 선택 문서, 현재 권한·소스 상태와 다음 행동 | 읽기 전용 조정이며 prepared는 실행 권한이나 완료가 아님 |
 | `report` | 근거가 연결된 결과를 brief/detail/JSON으로 표현 | 제출된 근거를 표시하며 검증 명령을 직접 실행하지 않음 |
 | 세션 캐시 | 호스트가 수명을 관리하는 선택적 문서 파싱 캐시 | 승인·대화·소스 검증·실행 근거는 저장하지 않음; 일반 CLI는 uncached |
+| Paseo 플러그인 | SKIP Records 패널, 호출/기록 첨부 source, 정확한 문서 첨부와 Decision Inbox | `plugins/paseo`에 소스 포함; 별도 Paseo daemon 설정 필요; 쓰기 차단은 없음 |
 
 작업 깊이는 `answer / compact / full`로 나누고 실행 권한과 분리합니다. 같은 범위와 현재 digest의 유효한 승인은 재사용하며, 변경된 문서를 모델의 의미 동등성 판단으로 자동 승인하지 않습니다. 계획 요청을 구현으로 확대하지 않습니다.
 
@@ -892,9 +926,41 @@ python3 scripts/intent_context.py --help    # 결정적 backend 명령 목록
 
 터미널의 자연어 호출은 요청 envelope를 출력하며 에이전트를 직접 실행하지 않습니다. 저장소를 clone해도 전역 `skip` 명령이 자동 설치되지는 않습니다.
 
+## Paseo 플러그인
+
+함께 사용하는 플러그인 소스는 [`plugins/paseo`](plugins/paseo)에 포함되어 있습니다. 기존 설치를 유지하기 위해 manifest ID는 `intent-launcher`를 사용합니다.
+
+**SKIP Records** workspace/explorer 패널, **Open SKIP Records** 명령, 호출·기록 첨부 source, 기록 미리보기·정확한 문서 첨부, 목표별 Decision Inbox를 등록합니다. 패널의 직접 첨부 기능이 없으면 `$skip` 호출문으로 대체합니다. SKIP 옵션을 검증하는 호출 파서는 플러그인의 `intent.server.ts`에 들어 있습니다.
+
+SKIP 저장소 루트에서 의존성과 소스를 확인합니다.
+
+```bash
+npm --prefix plugins/paseo ci
+npm --prefix plugins/paseo test
+npm --prefix plugins/paseo run typecheck
+```
+
+포함된 lockfile로 설치한 Node.js 24.18.1 환경에서 플러그인 **18개 테스트**와 `tsc --noEmit`이 통과했습니다. 이는 실제 GUI 동작의 검증과는 별개입니다.
+
+신뢰된 플러그인 기능을 켠 daemon에 설치할 때는 다음 경로를 지정합니다.
+
+```bash
+paseo plugin install /absolute/path/to/SKIP/plugins/paseo
+```
+
+설치·재로드는 별도의 운영 작업입니다. 플러그인은 daemon에서 신뢰된 코드로 실행되며 설정한 기록 저장소를 읽습니다. 개인 기록과 `node_modules`는 포함하지 않습니다.
+
+| Daemon 환경 변수 | 용도 / 기본값 |
+|---|---|
+| `INTENT_TO_CODE_RECORD_ROOT` | 기록 루트; `$XDG_DATA_HOME/SKIP` 또는 `~/.local/share/SKIP` |
+| `INTENT_TO_CODE_WORKSPACE_REGISTRY` | Paseo 프로젝트 연결; `$XDG_CONFIG_HOME/intent-to-code/workspaces.yaml` 또는 `~/.config/intent-to-code/workspaces.yaml` |
+| `SKIP_RUNTIME_SCRIPT` | Decision Inbox용 Python backend; `~/.agents/skills/skip/scripts/intent_context.py` |
+
+기록 프로젝트와 `bindings.paseo` 연결이 먼저 있어야 하며 override는 daemon의 환경에 설정합니다. 현재 플러그인의 프로젝트 식별은 이 정확한 registry 연결을 사용하며 Python selector의 모든 fallback을 제공하지 않습니다. 새 prepare/report의 UI 연결과 호스트 쓰기 차단은 포함하지 않습니다. 타입 선언은 로컬 검사 용도이고 실행 시 SDK는 Paseo가 제공합니다. 설치 후 desktop/mobile GUI 확인은 별도 검증입니다.
+
 ## 남은 연동 범위
 
-프로젝트 규칙, Context Pack, workflow prepare는 구현되어 있습니다. 호스트별 기록 뷰어·현재 세션 첨부 UI·쓰기 및 배포 차단은 별도 adapter의 책임입니다. 이 저장소에는 Paseo 플러그인이나 범용 IDE 연동 adapter가 포함되어 있지 않으며, 현재 강제력 표시는 `advisory`입니다.
+프로젝트 규칙, Context Pack, workflow prepare와 Paseo 플러그인 소스를 포함합니다. clone만으로 플러그인이 설치·재로드되지는 않습니다. 다른 IDE adapter, 플러그인 UI의 새 prepare/report 연결, 호스트 쓰기·배포 차단은 별도 작업이며 현재 강제력은 `advisory`입니다.
 
 ### 알려진 개발본 한계
 

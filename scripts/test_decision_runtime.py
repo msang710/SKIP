@@ -142,6 +142,38 @@ decisions:
         self.assertIn("Keep receipts", item["summary"])
         self.assertEqual(item["evidence"], "prd.md")
 
+    def test_history_cli_emits_one_json_and_preserves_failure(self):
+        (self.project / "project.yaml").write_text("project_id: p\ndisplay_name: Test\n", encoding="utf-8")
+        command = [sys.executable, "scripts/intent_context.py", "history",
+                   "--record-root", self.temp.name, "--project", "p", "--goal", "g"]
+
+        def invoke():
+            return subprocess.run(command, cwd=Path(__file__).parents[1],
+                                  text=True, capture_output=True)
+
+        missing = invoke()
+        self.assertEqual(missing.returncode, 2, missing.stdout + missing.stderr)
+        self.assertEqual(json.loads(missing.stdout)["status"], "error")
+
+        self.runtime.initialize()
+        for populated in (False, True):
+            with self.subTest(populated=populated):
+                if populated:
+                    mutation = self.command()
+                    preview = self.runtime.preview(mutation)
+                    self.runtime.allow(mutation, {"schema": "authority-envelope/v1",
+                                                 "kind": "user_turn", "request_id": preview["request_id"]})
+                result = invoke()
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                value = json.loads(result.stdout)  # Rejects a second JSON/error response.
+                self.assertEqual(value["status"], "ok")
+                self.assertEqual(value["schema"], "decision-history/v1")
+                self.assertEqual(value["project_id"], "p")
+                self.assertEqual(value["goal"], "g")
+                self.assertEqual(value["events"], self.runtime.history()["events"])
+                self.assertEqual(bool(value["events"]), populated)
+                self.assertEqual(result.stderr, "")
+
     def test_cli_round_trip_and_agent_authority_rejection(self):
         record_root = Path(self.temp.name)
         (self.project / "project.yaml").write_text("project_id: p\ndisplay_name: Test\n", encoding="utf-8")

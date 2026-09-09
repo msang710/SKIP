@@ -460,10 +460,6 @@ The record project and its `bindings.paseo` entry must already exist. Configure 
 
 Project rules, Context Pack compilation, workflow preparation, and the Paseo plugin source are included. Cloning this repository does not install or reload that plugin. Other IDE adapters, `prepare/report` integration into the plugin UI, and host write/deploy interception remain separate work. No `host-enforced` adapter is bundled.
 
-### Known development gap
-
-The `history` CLI currently emits its history JSON and then exits with code 2 / `internal_tool_error` because its result does not contain the status field expected by the CLI dispatcher. Do not treat that command as a successful machine-readable history export. The Python history reader and the `prepare` snapshot/provenance path are separate from that dispatcher failure. This issue is not covered by the passing history API tests.
-
 ## Verification
 
 The current source was checked on **Linux with Python 3.14.7**. Run the suite from the repository root:
@@ -474,7 +470,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
   scripts.test_workflow_runtime scripts.test_context_session scripts.test_workflow_report
 ```
 
-The suite contains **93 tests**, including approval reuse/staleness, revoked goals, bounded selection, source changes, report evidence, and cache isolation/corruption/concurrent writes. The original selection/context/gate tests remain in the suite.
+The suite contains **94 tests**, including approval reuse/staleness, revoked goals, bounded selection, source changes, report evidence, and cache isolation/corruption/concurrent writes. The original selection/context/gate tests remain in the suite.
 
 In a synthetic four-document fixture, cold parsing handled four documents and a warm call reparsed none while producing the same document Context Pack. Both calls still evaluated current gates and read original hashes. This is not a general speed or token-saving benchmark. Real-host conversation quality, GUI acceptance and pre-write enforcement require separate evidence.
 
@@ -986,10 +982,6 @@ paseo plugin install /absolute/path/to/SKIP/plugins/paseo
 
 프로젝트 규칙, Context Pack, workflow prepare와 Paseo 플러그인 소스를 포함합니다. clone만으로 플러그인이 설치·재로드되지는 않습니다. 다른 IDE adapter, 플러그인 UI의 새 prepare/report 연결, 호스트 쓰기·배포 차단은 별도 작업이며 현재 강제력은 `advisory`입니다.
 
-### 알려진 개발본 한계
-
-현재 `history` CLI는 history JSON을 출력한 뒤 종료 코드 2와 `internal_tool_error`를 반환합니다. 결과에 CLI dispatcher가 기대하는 status 필드가 없기 때문입니다. 성공한 기계 처리용 history export로 취급하면 안 됩니다. Python history reader와 `prepare`의 snapshot/provenance 경로는 이 dispatcher 오류와 별개이며, 통과한 history API 테스트가 CLI 성공까지 보장하지는 않습니다.
-
 ## 검증
 
 현재 소스는 **Linux / Python 3.14.7**에서 검증했습니다. 저장소 루트에서 실행합니다.
@@ -1000,7 +992,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
   scripts.test_workflow_runtime scripts.test_context_session scripts.test_workflow_report
 ```
 
-전체 **93개 테스트**는 기존 selector/context/gate 회귀와 승인 재사용·만료·철회, 소스 변경, 보고 근거, 캐시 격리·손상·동시 쓰기를 포함합니다.
+전체 **94개 테스트**는 기존 selector/context/gate 회귀와 승인 재사용·만료·철회, 소스 변경, 보고 근거, 캐시 격리·손상·동시 쓰기를 포함합니다.
 
 문서 4개를 사용하는 synthetic fixture에서는 cold 본문 파싱 4회, warm 재파싱 0회에 같은 문서 Context Pack을 반환했습니다. 두 호출 모두 현재 gate와 원본 해시를 다시 확인했습니다. 일반적인 속도·토큰 절감률을 입증한 것은 아니며, 실제 호스트 대화 품질·GUI·쓰기 차단은 별도로 검증해야 합니다.
 

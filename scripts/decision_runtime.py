@@ -342,5 +342,5 @@ class DecisionRuntime:
     def history(self, limit: int = 50) -> dict[str, Any]:
         self.require_initialized()
         events = self.store.events()[-max(1, min(limit, 200)):]
-        return {"schema": "decision-history/v1", "project_id": self.project_id,
+        return {"schema": "decision-history/v1", "operation": "history", "status": "ok", "project_id": self.project_id,
                 "goal": self.goal, "events": events}

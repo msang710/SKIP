@@ -1,5 +1,7 @@
 # SKIP
 
+[![CI](https://github.com/msang710/SKIP/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/msang710/SKIP/actions/workflows/ci.yml)
+
 > **Read the decisions. Skip the implementation details.**
 >
 > You need to know what you are trying to build. You do not need to know where every change belongs.
@@ -461,6 +463,8 @@ The record project and its `bindings.paseo` entry must already exist. Configure 
 Project rules, Context Pack compilation, workflow preparation, and the Paseo plugin source are included. Cloning this repository does not install or reload that plugin. Other IDE adapters, `prepare/report` integration into the plugin UI, and host write/deploy interception remain separate work. No `host-enforced` adapter is bundled.
 
 ## Verification
+
+[GitHub Actions](https://github.com/msang710/SKIP/actions/workflows/ci.yml) runs Python tests, Paseo plugin tests, and TypeScript checks on pushes to `main` and pull requests. CI uses Ubuntu, Python 3.14, and Node.js 24. It does not verify live host integration or GUI behavior.
 
 The current source was checked on **Linux with Python 3.14.7**. Run the suite from the repository root:
 
@@ -983,6 +987,8 @@ paseo plugin install /absolute/path/to/SKIP/plugins/paseo
 프로젝트 규칙, Context Pack, workflow prepare와 Paseo 플러그인 소스를 포함합니다. clone만으로 플러그인이 설치·재로드되지는 않습니다. 다른 IDE adapter, 플러그인 UI의 새 prepare/report 연결, 호스트 쓰기·배포 차단은 별도 작업이며 현재 강제력은 `advisory`입니다.
 
 ## 검증
+
+[GitHub Actions](https://github.com/msang710/SKIP/actions/workflows/ci.yml)에서 `main` push와 pull request마다 Python 테스트, Paseo 플러그인 테스트, TypeScript 검사를 실행합니다. CI 환경은 Ubuntu, Python 3.14, Node.js 24이며 실제 호스트 연동이나 GUI 동작 검증은 포함하지 않습니다.
 
 현재 소스는 **Linux / Python 3.14.7**에서 검증했습니다. 저장소 루트에서 실행합니다.
 

@@ -1,0 +1,12 @@
+# Local Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Runtime records and machine-local state
+/records/
+/.skip/
+.env
+.env.*
+!.env.example

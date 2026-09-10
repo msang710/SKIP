@@ -57,7 +57,7 @@
   },
   "not_run": [
     "Windows bundled execution",
-    "Windows app installation and first entry",
+    "Windows installer validation and first entry",
     "live Paseo same-thread dispatch",
     "live UI visual/keyboard acceptance",
     "remote CI"

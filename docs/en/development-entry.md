@@ -8,7 +8,7 @@ The Codex adapter checks the current local host session's actual user message. T
 
 The Windows package bundles pinned CPython, licenses, an isolated module path and file hashes. It does not require end users to install Python, Git, npm or WSL. The existing source/skill installation remains a common fallback.
 
-Windows app installation, session-record availability and the complete first-use journey still need native acceptance. Linux server integration tests do not replace Paseo visual/live-install acceptance. Adding Windows CI does not mean that workflow has run. The Codex operation recognizer is conservative for explicit Korean/English requests; a bare “yes” does not invent implementation scope. Public catalog placement, upload and installation are separate from this source implementation.
+Windows installer validation, session-record availability and the complete first-use journey still need native acceptance. Linux server integration tests do not replace Paseo visual/live-install acceptance. Adding Windows CI does not mean that workflow has run. The Codex operation recognizer is conservative for explicit Korean/English requests; a bare “yes” does not invent implementation scope. Public catalog placement, upload and installation are separate from this source implementation.
 
 See the [entry contract](../../references/low-friction-entry-contract.md) and [package source](../../plugins/codex/README.md).
 
@@ -16,6 +16,6 @@ See the [entry contract](../../references/low-friction-entry-contract.md) and [p
 
 Python: **126 passed**, with 3 Windows-specific cases not run on Linux (129 total, including the original 94 regressions). Paseo: **22 passed** plus TypeScript. The native server integration covers activation, actual-request routing, risk, compact execution basis, a change, reporting, NOW and stale-source detection through a real Python subprocess.
 
-The package passed the pinned runtime checksum, all 73 member hashes, and plugin/skill validation. Its included source tests ran on Linux: 30 passed and 3 Windows-specific cases not run. The live Linux Codex session adapter matched the current user's actual message ID and text. Windows CI execution, Windows app installation, live Paseo visual acceptance and deployment remain **NOT_RUN**.
+The package passed the pinned runtime checksum, all 73 member hashes, and plugin/skill validation. Its included source tests ran on Linux: 30 passed and 3 Windows-specific cases not run. The live Linux Codex session adapter matched the current user's actual message ID and text. Windows CI execution, Windows installer validation, live Paseo visual acceptance and deployment remain **NOT_RUN**.
 
 Local development archive: `skip-codex-windows-0.2.0-dev.1.zip`, SHA-256 `4ad2721b7904019148699378d57f05bf228bc1e51ae53a4545b4f6b5190488b4`. No public installation link has been published.

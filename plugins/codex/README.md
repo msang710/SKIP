@@ -14,4 +14,4 @@ python3 scripts/build_codex_package.py --output /tmp/skip-windows-dev.zip
 
 호스트는 `package-manifest.json`의 executable/arguments를 package root 기준 절대 경로로 실행합니다. 진입 어댑터는 `skills/skip/scripts/codex_entry.py`입니다. 현재 스레드의 실제 사용자 메시지를 확인할 수 없는 호스트는 명시적인 capability gap을 반환합니다. 일반 `intent_context.py entry`는 읽기 전용 진단을 제공합니다.
 
-**현재 검증 경계:** Linux에서 소스 Core·Codex 현재 요청 참조·Paseo 서버 통합과 ZIP 구조를 검사합니다. Windows CI 작업은 동봉 interpreter로 PATH를 비우고 같은 계약을 검사하도록 구성했습니다. 실제 Windows ChatGPT 앱 설치, 로컬 session record 제공 여부, 첫 사용자 여정과 화면 수용은 아직 별도 검증이 필요합니다. 로컬 ZIP을 공개 앱 설치 경로라고 표시하지 않습니다. 기존 소스/스킬 설치는 동일 Core의 공통 fallback으로 유지합니다.
+**현재 검증 경계:** Linux에서 소스 Core·Codex 현재 요청 참조·Paseo 서버 통합과 ZIP 구조를 검사합니다. Windows CI 작업은 동봉 interpreter로 PATH를 비우고 같은 계약을 검사하도록 구성했습니다. Windows 설치기의 실제 설치 흐름, 기존 Codex 호스트의 로컬 session record 제공 여부, 첫 사용자 여정과 화면 수용은 아직 별도 검증이 필요합니다. 로컬 ZIP을 검증된 Windows 설치기로 표시하지 않습니다. 기존 소스/스킬 설치는 동일 Core의 공통 fallback으로 유지합니다.

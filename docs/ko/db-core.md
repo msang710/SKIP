@@ -1,6 +1,6 @@
 # SQLite 공통 Core 개발본
 
-2026-09-10 개발 구현 후, 사용자 요청에 따라 Linux 로컬 설치본과 Paseo 플러그인을 전환했다. Windows 앱 설치 및 공개 릴리스 검증은 별도다.
+2026-09-10 개발 구현 후, 사용자 요청에 따라 Linux 로컬 설치본과 Paseo 플러그인을 전환했다. Windows 설치기 및 공개 릴리스 검증은 별도다.
 
 SKIP의 업무 기록은 SQLite 한 곳에 저장한다. 설명과 근거는 TEXT, 결정→선택→요구사항→설계→작업→검증 관계는 revision을 포함한 외래 키로 연결한다. CLI·MCP·Paseo는 같은 Application API와 상태 조회를 사용한다. 정상 런타임에는 Markdown 이중 쓰기와 파일 저장소 fallback이 없다. 사용자가 명시적으로 요청한 일회성 이관은 별도 오프라인 유지보수 도구로 수행하며, 원문 바이트·출처·당시 상태를 DB에 보존한다.
 
@@ -65,7 +65,7 @@ python scripts/build_codex_package.py --output dist/skip-core-candidate.zip --wi
 
 소스 CLI는 `./skip --project <id> query status`, MCP는 `python -m skip_mcp.server --project <id> --workspace <현재 경로>`로 같은 Core를 사용한다. 조회로 DB를 초기화하지 않는다. 활성화는 실제 사용자 입력을 확인하는 native adapter 또는 interactive CLI가 담당한다.
 
-Windows candidate에는 `skip.cmd`, `skip-core.cmd`, `skip-mcp.cmd`와 동봉 Python이 있다. 런타임에 pip/npm 다운로드는 없다. Windows 앱의 실제 설치 접점이 검증되기 전까지 한 번 클릭 설치 완료나 앱 전체 지원을 선언하지 않는다.
+Windows candidate에는 `skip.cmd`, `skip-core.cmd`, `skip-mcp.cmd`와 동봉 Python이 있다. 런타임에 pip/npm 다운로드는 없다. Windows 설치기의 실제 설치 흐름이 검증되기 전까지 한 번 클릭 설치 완료를 선언하지 않는다.
 
 구형 파일 기반 scripts·문서·테스트는 이전 세대 검증을 위해 소스에 남아 있지만 새 패키지에 포함되지 않으며 새 활성 진입점에서 호출하지 않는다. 기존 설치본은 이번 변경과 별개다. 실제 전환 때 활성 writer와 장시간 열린 세션까지 함께 확인해야 한다.
 

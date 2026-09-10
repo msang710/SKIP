@@ -102,6 +102,21 @@ class ApplicationTests(unittest.TestCase):
             db.connection.execute("INSERT INTO schema_migrations VALUES(999,?,'now')", ("f"*64,))
         self.assertCode('UNSUPPORTED_SCHEMA',lambda:Database(backup))
 
+    def test_goals_recent_changes_first_and_reads_preserve_order(self):
+        self.f.request(); first=self.f.goal; first_request=self.f.request_id
+        self.f.request(); second=self.f.goal
+        def page(payload=None):
+            return self.f.core.query('status',payload or {},self.f.actor(),self.f.ctx)['data']
+        self.assertEqual([r['id'] for r in page()['goals']],[second,first])
+        page({'goal_id':first})
+        self.assertEqual([r['id'] for r in page()['goals']],[second,first])
+        record=self.f.core.query('record',{'kind':'goal','id':first},self.f.actor(),self.f.ctx)['data']
+        self.f.call('record.propose_revision',dict(kind='goal',id=first,expected_revision=record['revision'],
+            request_id=first_request,goal_id=first,fields={**record['fields'],'title':'Updated goal'},children={}))
+        one=page({'limit':1})
+        self.assertEqual(one['goals'][0]['id'],first)
+        self.assertEqual(page({'limit':1,'cursor':one['next_cursor']})['goals'][0]['id'],second)
+
     def test_settings_change_invalidates_risk(self):
         self.f.work()
         self.f.call('settings.update',{'scope':'project','expected_revision':0,'body':{'disabled_default_rule_ids':[],

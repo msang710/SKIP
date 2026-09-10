@@ -76,3 +76,17 @@ test("finish requires exact message and turn, and waits for accepted delivery", 
   tracker.acknowledge(); tracker.acknowledge();
   assert.deepEqual(reports, ["finishedt"]);
 });
+
+test("expiry can reconnect only the same panel and never replays a write", async () => {
+  const f=fixture(), c=await f.sessions.connect(f.api,f.binding);
+  const original=Date.now;
+  try {
+    Date.now=()=>original()+31*60_000;
+    await assert.rejects(f.sessions.query(f.api,c.sessionId,f.binding,"status",{}),(e:any)=>e.code==="CONTEXT_EXPIRED");
+    const next=await f.sessions.connect(f.api,f.binding);
+    await f.sessions.query(f.api,next.sessionId,f.binding,"status",{});
+    assert.equal(f.calls.filter(c=>c.operation==="user").length,0);
+    assert.equal(f.sent.length,0);
+    await assert.rejects(f.sessions.query(f.api,next.sessionId,{...f.binding,uiInstanceId:"another"},"status",{}));
+  } finally { Date.now=original; f.sessions.dispose(); }
+});

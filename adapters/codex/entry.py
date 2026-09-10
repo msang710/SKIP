@@ -1,5 +1,6 @@
 """Use the current Codex user turn. Never launch an unrelated app-server session."""
 import argparse
+from dataclasses import replace
 import json
 import os
 import re
@@ -10,7 +11,8 @@ from skip_core.db import Database,default_path
 from skip_core.errors import CoreError,require
 from skip_core.service import Core
 from adapters.common.identity import resolve_project
-from .provenance import current_user,infer_operation,is_continuation
+from .provenance import current_user,infer_operation,is_continuation,proposal_reply
+from skip_core.input_contract import normalize,classify
 
 
 def run(workspace,session_root,thread_id,db_path,*,project_id=None,goal_id=None,activate=False,begin=None,finish=None):
@@ -43,7 +45,10 @@ def run(workspace,session_root,thread_id,db_path,*,project_id=None,goal_id=None,
     # Stable per selected host user turn; process restarts do not invent a new request.
     principal=Principal(project,origin,kind='human',method='host_user_turn',
                         verifier='codex-local-session-record',event_key=user['id'],user_text=user['text'])
-    operation=infer_operation(user['text'])
+    envelope=normalize(user['text'],project)
+    interpretation=classify(envelope)
+    acts=interpretation['acts']
+    operation='implement' if 'implement' in acts else 'deploy' if 'deploy' in acts else 'plan' if set(acts)&{'design','requirements','tasks'} else 'investigate' if set(acts)&{'investigate','validate'} else 'answer'
     if activate:
         require(re.search(r'(?<!\w)[/$]skip\b|\bSKIP\b',user['text'],re.I),'USER_ACTION_REQUIRED','Activation requires an explicit SKIP request')
     with Database(db_path,create=activate) as db:
@@ -52,13 +57,31 @@ def run(workspace,session_root,thread_id,db_path,*,project_id=None,goal_id=None,
             command={'schema':'skip-core/v1','command':'project.activate','project_id':project,'key':digest([user['id'],'activate']),
                      'payload':{'name':workspace.name}}
             return core.execute(command,principal,ctx)
+        if operation=='answer' and re.fullmatch(r'\s*(그래\s*)?(승인이야|승인해|승인|동의해|approve|approved)[.!\s]*',user['text'],re.I):
+            candidates=[]
+            if goal_id:
+                rows=db.connection.execute('SELECT p.* FROM action_proposals p JOIN request_goals g ON g.project_id=p.project_id AND g.request_id=p.request_id WHERE p.project_id=? AND g.goal_id=? AND NOT EXISTS(SELECT 1 FROM action_proposals n WHERE n.project_id=p.project_id AND n.id=p.id AND n.revision>p.revision) LIMIT 101',(project,goal_id)).fetchall()
+                require(len(rows)<=100,'AMBIGUOUS_INPUT','Proposal lookup incomplete')
+                candidates=[dict(r) for r in rows]
+            ref=proposal_reply(user,candidates)
+            if ref:
+                principal=replace(principal,response_ref=ref)
+                result=core.execute({'schema':'skip-core/v1','command':'response.bind','project_id':project,'key':digest([user['id'],'response']),'payload':{'proposal_id':ref[0],'revision':ref[1]}},principal,ctx)
+                proposal=next(c for c in candidates if c['id']==ref[0] and c['revision']==ref[1])
+                proposed=json.loads(proposal['body_json'])
+                acts=[proposed['action']]
+                operation='plan' if proposed['action'] in ('design','requirements','tasks') else proposed['action']
+                if not begin and not finish:
+                    if goal_id:result['data']['context']=core.query('context',{'goal_id':goal_id,'stage':'restore'},principal,ctx)['data']
+                    return result
         if begin or finish:
-            require(operation in ('plan','implement'),'USER_ACTION_REQUIRED','The current user turn must authorize this work')
+            require(operation in ('plan','implement','investigate','deploy'),'USER_ACTION_REQUIRED','The current user turn must authorize this work')
             op='execution.begin_current' if begin else 'execution.finish_current'
             payload=begin if begin else {'execution_id':finish}
             if begin:
                 work=core.query('record',{'kind':'work_item','id':begin['work_id'],'revision':begin['revision']},principal,ctx)['data']
-                allowed=('investigate','requirements','design','tasks') if operation=='plan' else ('investigate','implement','validate')
+                allowed=set(acts)|{'investigate'}
+                if 'implement' in acts:allowed.add('validate')
                 require(work['fields']['operation'] in allowed,'USER_ACTION_REQUIRED','Action exceeds the current user request')
             return core.execute({'schema':'skip-core/v1','command':op,'project_id':project,'key':digest([user['id'],op,payload]),'payload':payload},principal,ctx)
         if user['text'].startswith('SKIP 사용자 선택\n'):
@@ -67,12 +90,32 @@ def run(workspace,session_root,thread_id,db_path,*,project_id=None,goal_id=None,
                     and selected['project_id']==project,'INVALID_INPUT','Invalid selected card')
             p={k:selected[k] for k in ('decision_id','revision','option_id')}
             return core.execute({'schema':'skip-core/v1','command':'decision.select','project_id':project,'key':digest(user['id']),'payload':p},principal,ctx)
+        def with_context(result, selected_goal):
+            if selected_goal:
+                result['data']['context']=core.query('context',{'goal_id':selected_goal,'stage':'restore'},principal,ctx)['data']
+            return result
+        if envelope['targets']:
+            target=envelope['targets'][0]
+            selected=core.query('record',target,principal,ctx)['data']
+            require(selected['current_revision']==target['revision'],'STALE','Selected record changed')
+            require(not goal_id or selected['goal_id']==goal_id,'PROJECT_MISMATCH','Selected record outside goal')
+            goal_id=selected['goal_id']
+            if operation=='answer':return {'schema':'skip-core/v1','status':'ok','data':{'record':selected,'authority':'reading_material'},'enforcement':'advisory'}
         if operation=='answer' or is_continuation(user['text']):
-            return core.query('status',{'goal_id':goal_id} if goal_id else {},principal,ctx)
-        require(operation in ('plan','implement'),'USER_ACTION_REQUIRED','A concrete current request is needed')
+            return with_context(core.query('status',{'goal_id':goal_id} if goal_id else {},principal,ctx),goal_id)
+        require(operation in ('plan','implement','investigate','deploy'),'USER_ACTION_REQUIRED','A concrete current request is needed')
         payload={'text':user['text'],'operation':operation}
         if goal_id:payload['goal_id']=goal_id
-        return core.execute({'schema':'skip-core/v1','command':'request.submit','project_id':project,'key':digest(user['id']),'payload':payload},principal,ctx)
+        core.execute({'schema':'skip-core/v1','command':'input.ingest','project_id':project,'key':digest([user['id'],'input']),'payload':{}},principal,ctx)
+        result=core.execute({'schema':'skip-core/v1','command':'request.submit','project_id':project,'key':digest(user['id']),'payload':payload},principal,ctx)
+        request_id=result['data']['request_id']
+        body={k:interpretation[k] for k in ('acts','constraints','targets','evidence_spans','unresolved')}
+        existing=core.query('entry.inspect',{'request_id':request_id},principal,ctx)['data']['interpretation']
+        if existing is None:
+            core.execute({'schema':'skip-core/v1','command':'intent.propose','project_id':project,'key':digest([user['id'],'interpretation']),'payload':{'request_id':request_id,'expected_revision':0,'body':body}},principal,ctx)
+        result['data']['entry_basis']=core.query('entry.inspect',{'request_id':request_id},principal,ctx)['data']
+        result['data']['stage_assessment']=core.query('stage.assess',{'request_id':request_id,'goal_id':result['data']['goal']['id']},principal,ctx)['data']
+        return with_context(result,result['data']['goal']['id'])
 
 
 def main(argv=None):

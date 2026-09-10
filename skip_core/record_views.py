@@ -35,6 +35,13 @@ def listing(core,goal,kind,limit,offset,search=None):
     for row in core.c.execute(sql,args):
         r=dict(row);r['origin']=origin(core.c,core.project,r['kind'],r['id'],r['revision'])
         if r['origin']:r['origin'].pop('source_excerpt',None)
+        if r['kind']=='decision':
+            from .decision_state import attach
+            detail=attach(core,records.get(core.c,core.project,'decision',r['id'],r['revision']))
+            for key in ('selection_state','selection_stale','action_state'):
+                r[key]=detail[key]
+            option=detail['selected_option']
+            r['selected_option']={key:option[key] for key in ('option_id','label')} if option else None
         rows.append(r)
     return rows
 

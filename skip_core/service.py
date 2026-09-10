@@ -18,12 +18,20 @@ OPERATIONS = {
  'execution.begin_current': ({'work_id','revision','goal_risk_id','change_risk_id'}, set(), True),
  'execution.finish_current': ({'execution_id'}, set(), True),
  'execution.cancel': ({'execution_id','expected_state_version'}, set(), True),
- 'evidence.record': ({'snapshot_id','surface','result','summary','method'}, {'execution_id','checks','criteria','payload'}, False),
+ 'evidence.record': ({'snapshot_id','surface','result','summary','method'}, {'execution_id','checks','criteria','payload','purpose'}, False),
  'fact.record': ({'evidence_id','source_id','statement'}, {'goal_id','supersedes_id'}, False),
  'fact.retract': ({'fact_id','reason'}, set(), False),
  'settings.update': ({'scope','expected_revision','body'}, set(), True),
  'observation.record': ({'paths','summary'}, {'goal_id'}, False),
 }
+
+# Loaded after the base operation definitions to avoid import cycles.
+from .learning_runtime import OPS as LEARNING_OPS, HANDLERS as LEARNING_HANDLERS
+OPERATIONS.update(LEARNING_OPS)
+from .entry_runtime import OPS as ENTRY_OPS, HANDLERS as ENTRY_HANDLERS
+OPERATIONS.update(ENTRY_OPS)
+from .authoring import OPS as AUTHORING_OPS, HANDLERS as AUTHORING_HANDLERS
+OPERATIONS.update(AUTHORING_OPS)
 
 
 class Core:
@@ -71,8 +79,16 @@ class Core:
                 require(exists and exists['state']=='active', 'NOT_INITIALIZED', 'Connect this project first')
             self.interaction = self._interaction(principal, command)
             self.event = self.event_record(op)
-            handler = getattr(self, '_' + op.replace('.','_'))
-            data = handler(payload)
+            if op in AUTHORING_HANDLERS:
+                data = AUTHORING_HANDLERS[op](self,payload)
+                data['submission_id']=key
+            elif op in ENTRY_HANDLERS:
+                data = ENTRY_HANDLERS[op](self,payload)
+            elif op in LEARNING_HANDLERS:
+                data = LEARNING_HANDLERS[op](self,payload)
+            else:
+                handler = getattr(self, '_' + op.replace('.','_'))
+                data = handler(payload)
             if context is not None:
                 context.check()
             result = {'schema':'skip-core/v1','status':'ok','data':data,'enforcement':'advisory'}
@@ -144,6 +160,13 @@ class Core:
             goal = self.publish({'kind':'goal','request_id':request,'expected_revision':0,
                 'fields':{'title':p['text'][:160],'intent':p['text'],'success_definition':p['text']}})
         records.insert(self.c,'request_goals',dict(project_id=self.project,request_id=request,goal_id=goal['id']))
+        if self.c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='input_envelopes'").fetchone():
+            from .entry_runtime import ingest,propose
+            from .input_contract import normalize,classify
+            ingest(self,{})
+            suggestion=classify(normalize(p['text'],self.project))
+            body={k:suggestion[k] for k in ('acts','constraints','targets','evidence_spans','unresolved')}
+            propose(self,{'request_id':request,'expected_revision':0,'body':body})
         return {'request_id':request,'goal':goal,'next_action':'investigate'}
 
     def _record_propose_revision(self, p):

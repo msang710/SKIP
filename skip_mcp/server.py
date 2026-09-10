@@ -8,6 +8,7 @@ from skip_core.common import encoded,uid
 from skip_core.db import Database,default_path
 from skip_core.errors import CoreError,require
 from skip_core.service import Core
+from .authoring_types import AuthoringBase, Submission, Amendment, ResultEvidence, CurrentFact, FailureReport
 
 
 def create_server(db_path,project_id,workspace=None,receipt_scope=None):
@@ -46,14 +47,69 @@ def create_server(db_path,project_id,workspace=None,receipt_scope=None):
     read=ToolAnnotations(readOnlyHint=True,destructiveHint=False,idempotentHint=True,openWorldHint=False)
 
     @server.tool(annotations=read)
+    async def skip_learning(query_name:str,payload:dict)->dict:
+        """Read learning.list, learning.record, guidance or assurance through Core."""
+        if query_name not in ('failure.history','learning.list','learning.record','guidance','assurance'):
+            return {'status':'error','code':'INVALID_INPUT','enforcement':'advisory'}
+        return query(query_name,payload)
+
+    @server.tool()
+    async def skip_record_learning(operation:str,payload:dict,key:str)->dict:
+        """Record failures, candidate guidelines, assessments or verification. Cannot accept contracts."""
+        from skip_core.learning_runtime import OPS
+        if operation not in OPS or OPS[operation][2]:
+            return {'status':'error','code':'USER_ACTION_REQUIRED','enforcement':'advisory'}
+        return command(operation,payload,key)
+
+    @server.tool(annotations=read)
+    async def skip_entry(request_id:str, goal_id:str|None=None, assess_stage:bool=False)->dict:
+        """Read input provenance or stage requirements; never grants authority."""
+        return query('stage.assess' if assess_stage else 'entry.inspect',{'request_id':request_id,**({'goal_id':goal_id} if goal_id and assess_stage else {})})
+
+    @server.tool()
+    async def skip_interpret(request_id:str,expected_revision:int,body:dict,key:str)->dict:
+        """Propose intent with original instruction spans; cannot grant user authority."""
+        return command('intent.propose',{'request_id':request_id,'expected_revision':expected_revision,'body':body},key)
+
+    @server.tool()
+    async def skip_propose_action(request_id:str,body:dict,key:str,id:str|None=None,expected_revision:int=0)->dict:
+        """Prepare exact action/scope for a native reply; display_ref must accompany the shown proposal. Not approval."""
+        return command('action.propose',{'request_id':request_id,'body':body,'expected_revision':expected_revision,**({'id':id} if id else {})},key)
+
+    @server.tool()
+    async def skip_submit(base:AuthoringBase,records:list[Submission],submission_id:str)->dict:
+        """Atomically create linked records. Each has client_ref, kind, fields, children. Refer to earlier records as $client_ref; revisions are resolved by Core. No approvals."""
+        return command('authoring.submit',{'base':base,'records':records},submission_id)
+
+    @server.tool()
+    async def skip_amend(base:AuthoringBase,changes:list[Amendment],submission_id:str)->dict:
+        """Patch exact target {kind,id,revision} using set_fields/upsert_items/remove_items. Omitted fields and links survive. Atomic; receipt includes saved records."""
+        return command('authoring.amend',{'base':base,'changes':changes},submission_id)
+
+    @server.tool()
+    async def skip_result(base:AuthoringBase,snapshot_id:str,evidence:ResultEvidence,submission_id:str,execution_id:str|None=None,now:CurrentFact|None=None,failure:FailureReport|None=None)->dict:
+        """Record evidence and optional explicit NOW/failure together. Ordinary FAIL is evidence only; failure opts into an incident. Never marks execution finished."""
+        return command('authoring.result',{'base':base,'snapshot_id':snapshot_id,'evidence':evidence,**({'execution_id':execution_id} if execution_id else {}),**({'now':now} if now else {}),**({'failure':failure} if failure else {})},submission_id)
+
+    @server.tool(annotations=read)
+    async def skip_requests(goal_id:str|None=None,cursor:str|None=None,limit:int=30)->dict:
+        """Read requests saved in SKIP (including UI submissions), not the latest chat message."""
+        return query('request.list',{'goal_id':goal_id,'cursor':cursor,'limit':limit})
+
+    @server.tool(annotations=read)
+    async def skip_request(id:str)->dict:
+        """Read one exact saved request and its linked goals; reading grants no execution authority."""
+        return query('request',{'id':id})
+
+    @server.tool(annotations=read)
     async def skip_status(goal_id:str|None=None,cursor:str|None=None,limit:int=30)->dict:
         """Current facts, checks and remaining work; never creates a goal."""
         return query('status',{'goal_id':goal_id,'cursor':cursor,'limit':limit})
 
     @server.tool(annotations=read)
-    async def skip_context(goal_id:str,stage:str='implementation',budget:int=18000)->dict:
+    async def skip_context(goal_id:str,stage:str='implementation',budget:int=18000,snapshot_id:str|None=None,work_id:str|None=None,request_id:str|None=None)->dict:
         """Bounded goal context. Incomplete means required context was omitted."""
-        return query('context',{'goal_id':goal_id,'stage':stage,'budget':budget})
+        return query('context',{'goal_id':goal_id,'stage':stage,'budget':budget,**({'snapshot_id':snapshot_id} if snapshot_id else {}),**({'work_id':work_id} if work_id else {}),**({'request_id':request_id} if request_id else {})})
 
     @server.tool(annotations=read,meta={'ui':{'resourceUri':'ui://skip/decision-inbox'}})
     async def skip_decisions(goal_id:str|None=None,cursor:str|None=None,limit:int=30)->dict:

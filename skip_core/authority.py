@@ -18,6 +18,7 @@ class Principal:
     event_key: str = ''
     user_text: str = ''
     installation_admin: bool = False
+    response_ref: tuple[str, int] | None = None
 
     @property
     def fingerprint(self):

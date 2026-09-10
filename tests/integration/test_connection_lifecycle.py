@@ -48,7 +48,7 @@ class ConnectionTests(unittest.TestCase):
         result=subprocess.run(args,cwd=f.root,env=env,capture_output=True,text=True,timeout=10,check=True)
         value=json.loads(result.stdout)
         self.assertEqual(value['status'],'ok')
-        self.assertEqual(value['actual_schema_versions'],[1,2,3,4])
+        self.assertEqual(value['actual_schema_versions'],[1,2,3,4,5,6])
         self.assertEqual(value['core_root'],str(Path(__file__).resolve().parents[2]))
 
     def test_simultaneous_cli_retries_write_once(self):
@@ -157,7 +157,7 @@ class DatabaseErrors(unittest.TestCase):
             with patch.object(Database,'migrations',side_effect=mismatched):
                 with self.assertRaises(CoreError) as result:Database(path)
             self.assertEqual(result.exception.code,'UNSUPPORTED_SCHEMA')
-            self.assertEqual(result.exception.details['actual_schema_versions'],[1,2,3,4])
+            self.assertEqual(result.exception.details['actual_schema_versions'],[1,2,3,4,5,6])
             path.unlink();path.touch()
             with self.assertRaises(CoreError) as result:Database(path)
             self.assertEqual(result.exception.code,'UNSUPPORTED_SCHEMA')

@@ -17,15 +17,22 @@ def main(argv=None):
     parser.add_argument('--receipt-scope', help='Client-owned retry namespace; never user or execution authority')
     parser.add_argument('--workspace',type=Path,default=Path.cwd())
     sub=parser.add_subparsers(dest='operation',required=True)
+    upgrade=sub.add_parser('upgrade-candidate',help='Upgrade a new DB copy; never switch the active store');upgrade.add_argument('target',type=Path)
     sub.add_parser('diagnose',help='Report the active Core, DB path and schema compatibility')
     sub.add_parser('activate',help='Interactively connect this project; creates no goals')
     query=sub.add_parser('query');query.add_argument('name');query.add_argument('--input',default='{}')
+    for operation in ('submit','amend','result'):
+        author=sub.add_parser(operation,help='Read an authoring payload from stdin, in one transaction')
+        author.add_argument('--submission-id',required=True,help='Reuse this ID only for an identical retry')
     sub.add_parser('command',help='Read an agent command from stdin; cannot approve or start a turn')
     sub.add_parser('request',help='Read a real request interactively')
     backup=sub.add_parser('backup');backup.add_argument('target',type=Path)
     restore_parser=sub.add_parser('restore');restore_parser.add_argument('target',type=Path)
     args=parser.parse_args(argv)
     try:
+        if args.operation=='upgrade-candidate':
+            from .upgrade import candidate
+            print(encoded(candidate(args.db,args.target)));return 0
         if args.operation=='diagnose':
             with Database(args.db) as db:
                 print(encoded({'status':'ok', **db.diagnostics([r[0] for r in db.connection.execute('SELECT version FROM schema_migrations ORDER BY version')])}))
@@ -57,12 +64,15 @@ def main(argv=None):
             elif args.operation=='backup':
                 result=db.backup(args.target)
             else:
-                if args.operation=='command':
+                if args.operation in ('command','submit','amend','result'):
                     require(verified or args.receipt_scope, 'CALLER_UNVERIFIED',
                             'No verified caller for retry-safe commands; configure a client-owned --receipt-scope. This grants no approval.')
                     raw=sys.stdin.read(512001)
                     require(len(raw)<=512000,'INVALID_INPUT','Command too large')
                     command=json.loads(raw)
+                    if args.operation!='command':
+                        command={'schema':'skip-core/v1','project_id':args.project,'command':'authoring.'+args.operation,
+                                 'key':args.submission_id,'payload':command}
                 else:
                     op='project.activate' if args.operation=='activate' else 'request.submit'
                     payload={'name':args.project} if args.operation=='activate' else {'text':words,'operation':'implement'}

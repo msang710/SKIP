@@ -8,8 +8,9 @@ SURFACES={'source','unit','integration','typecheck','build','package','install',
 RESULTS={'PASS','FAIL','NOT_RUN','INCONCLUSIVE'}
 
 
-def record(core,p):
+def record(core,p,*,auto_failure=True):
     require(p['surface'] in SURFACES and p['result'] in RESULTS,'INVALID_INPUT','Invalid verification surface or result')
+    require(p.get('purpose','verification') in ('verification','injection'),'INVALID_INPUT','Invalid evidence purpose')
     saved=core.one('snapshots',p['snapshot_id'])
     if p['result']!='NOT_RUN':
         verify_snapshot(core,saved['id'])
@@ -45,4 +46,7 @@ def record(core,p):
         records.insert(core.c,'evidence_payloads',dict(project_id=core.project,evidence_id=ident,part_id='output',
             media_type=text(payload['media_type'],128),content=content,content_digest=hashlib.sha256(content).hexdigest(),byte_length=len(content)))
     core.c.execute('UPDATE evidence SET sealed_at=? WHERE project_id=? AND id=?',(now(),core.project,ident))
+    if auto_failure and p['result']=='FAIL':
+        from .failures import report
+        report(core,{'evidence_id':ident,'classification':'injected' if p.get('purpose')=='injection' else 'unclassified'})
     return {'evidence_id':ident,'snapshot_id':saved['id'],'result':p['result'],'surface':p['surface'],'provenance':provenance}

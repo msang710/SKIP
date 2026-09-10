@@ -76,9 +76,9 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "operation": {},
+                "text": {},
                 "goal_id": {},
-                "text": {}
+                "operation": {}
               }
             }
           },
@@ -117,13 +117,13 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "request_id": {},
-                "id": {},
                 "fields": {},
-                "children": {},
                 "expected_revision": {},
                 "kind": {},
-                "goal_id": {}
+                "id": {},
+                "goal_id": {},
+                "children": {},
+                "request_id": {}
               }
             }
           },
@@ -162,10 +162,10 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "lifecycle": {},
-                "expected_revision": {},
                 "id": {},
-                "kind": {}
+                "lifecycle": {},
+                "kind": {},
+                "expected_revision": {}
               }
             }
           },
@@ -203,9 +203,9 @@
               ],
               "additionalProperties": false,
               "properties": {
+                "option_id": {},
                 "decision_id": {},
-                "revision": {},
-                "option_id": {}
+                "revision": {}
               }
             }
           },
@@ -245,9 +245,9 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "rationale": {},
                 "paths": {},
                 "change_factors": {},
+                "rationale": {},
                 "goal_id": {},
                 "goal_factors": {}
               }
@@ -288,11 +288,11 @@
               ],
               "additionalProperties": false,
               "properties": {
+                "change_risk_id": {},
+                "goal_risk_id": {},
                 "work_id": {},
                 "selection": {},
-                "change_risk_id": {},
-                "revision": {},
-                "goal_risk_id": {}
+                "revision": {}
               }
             }
           },
@@ -331,10 +331,10 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "change_risk_id": {},
+                "goal_risk_id": {},
                 "work_id": {},
-                "revision": {},
-                "goal_risk_id": {}
+                "change_risk_id": {},
+                "revision": {}
               }
             }
           },
@@ -407,8 +407,8 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "execution_id": {},
-                "expected_state_version": {}
+                "expected_state_version": {},
+                "execution_id": {}
               }
             }
           },
@@ -448,15 +448,16 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "result": {},
-                "method": {},
-                "criteria": {},
-                "summary": {},
-                "payload": {},
-                "snapshot_id": {},
                 "surface": {},
+                "snapshot_id": {},
+                "summary": {},
+                "checks": {},
                 "execution_id": {},
-                "checks": {}
+                "payload": {},
+                "result": {},
+                "criteria": {},
+                "method": {},
+                "purpose": {}
               }
             }
           },
@@ -494,11 +495,11 @@
               ],
               "additionalProperties": false,
               "properties": {
+                "statement": {},
                 "supersedes_id": {},
-                "source_id": {},
                 "evidence_id": {},
-                "goal_id": {},
-                "statement": {}
+                "source_id": {},
+                "goal_id": {}
               }
             }
           },
@@ -575,8 +576,8 @@
               "additionalProperties": false,
               "properties": {
                 "scope": {},
-                "expected_revision": {},
-                "body": {}
+                "body": {},
+                "expected_revision": {}
               }
             }
           },
@@ -613,10 +614,761 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "goal_id": {},
+                "summary": {},
                 "paths": {},
-                "summary": {}
+                "goal_id": {}
               }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "learning.propose"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "body",
+                "expected_revision",
+                "kind"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "snapshot_id": {},
+                "id": {},
+                "goal_id": {},
+                "expected_revision": {},
+                "links": {},
+                "kind": {},
+                "body": {},
+                "evidence": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "learning.accept"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "id",
+                "kind",
+                "revision",
+                "selection_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "id": {},
+                "selection_id": {},
+                "kind": {},
+                "revision": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "failure.report"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "classification",
+                "evidence_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "case_id": {},
+                "conditions": {},
+                "evidence_id": {},
+                "expected": {},
+                "classification": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "failure.attempt.record"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "action",
+                "case_id",
+                "evidence_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "case_id": {},
+                "action": {},
+                "evidence_id": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "guideline.assess"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "applicability",
+                "evidence_id",
+                "goal_id",
+                "guideline_id",
+                "outcome",
+                "rationale",
+                "revision",
+                "snapshot_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "applicability": {},
+                "guideline_id": {},
+                "goal_id": {},
+                "revision": {},
+                "evidence_id": {},
+                "outcome": {},
+                "rationale": {},
+                "work_id": {},
+                "snapshot_id": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "verification.run.start"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "environment",
+                "environment_evidence_id",
+                "revision",
+                "scenario_id",
+                "snapshot_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "execution_id": {},
+                "environment_evidence_id": {},
+                "snapshot_id": {},
+                "scenario_id": {},
+                "environment": {},
+                "revision": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "verification.run.finish"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "behavior",
+                "evidence_id",
+                "injection",
+                "recovery",
+                "run_id",
+                "trace"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "recovery": {},
+                "trace": {},
+                "injection": {},
+                "evidence_id": {},
+                "run_id": {},
+                "behavior": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "assurance.exception"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "obligation_id",
+                "rationale",
+                "revision",
+                "selection_id",
+                "snapshot_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "obligation_id": {},
+                "rationale": {},
+                "selection_id": {},
+                "snapshot_id": {},
+                "revision": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "assurance.link_check"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "check_id",
+                "obligation_id",
+                "revision",
+                "work_id",
+                "work_revision"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "work_revision": {},
+                "obligation_id": {},
+                "check_id": {},
+                "work_id": {},
+                "revision": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "assurance.evaluate"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "claim_id",
+                "snapshot_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "snapshot_id": {},
+                "claim_id": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "input.ingest"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [],
+              "additionalProperties": false,
+              "properties": {}
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "intent.propose"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "body",
+                "expected_revision",
+                "request_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "expected_revision": {},
+                "body": {},
+                "request_id": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "action.propose"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "body",
+                "request_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "id": {},
+                "expected_revision": {},
+                "body": {},
+                "request_id": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "response.bind"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "proposal_id",
+                "revision"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "proposal_id": {},
+                "revision": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "authoring.submit"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "additionalProperties": false,
+              "properties": {
+                "base": {
+                  "$ref": "#/$defs/AuthoringBase"
+                },
+                "records": {
+                  "items": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/decisionSubmission"
+                      },
+                      {
+                        "$ref": "#/$defs/requirementSubmission"
+                      },
+                      {
+                        "$ref": "#/$defs/planSubmission"
+                      },
+                      {
+                        "$ref": "#/$defs/work_itemSubmission"
+                      }
+                    ]
+                  },
+                  "title": "Records",
+                  "type": "array"
+                }
+              },
+              "required": [
+                "base",
+                "records"
+              ],
+              "title": "authoring.submit",
+              "type": "object"
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "authoring.amend"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "additionalProperties": false,
+              "properties": {
+                "base": {
+                  "$ref": "#/$defs/AuthoringBase"
+                },
+                "changes": {
+                  "items": {
+                    "$ref": "#/$defs/Amendment"
+                  },
+                  "title": "Changes",
+                  "type": "array"
+                }
+              },
+              "required": [
+                "base",
+                "changes"
+              ],
+              "title": "authoring.amend",
+              "type": "object"
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "authoring.result"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "additionalProperties": false,
+              "properties": {
+                "base": {
+                  "$ref": "#/$defs/AuthoringBase"
+                },
+                "snapshot_id": {
+                  "title": "Snapshot Id",
+                  "type": "string"
+                },
+                "evidence": {
+                  "$ref": "#/$defs/ResultEvidence"
+                },
+                "execution_id": {
+                  "title": "Execution Id",
+                  "type": "string"
+                },
+                "now": {
+                  "$ref": "#/$defs/CurrentFact"
+                },
+                "failure": {
+                  "$ref": "#/$defs/FailureReport"
+                }
+              },
+              "required": [
+                "base",
+                "snapshot_id",
+                "evidence"
+              ],
+              "title": "authoring.result",
+              "type": "object"
             }
           },
           "description": "Agent command; no human authority"
@@ -1146,6 +1898,971 @@
           "maxLength": 65536
         }
       }
+    },
+    "AuthoringBase": {
+      "additionalProperties": false,
+      "properties": {
+        "goal_id": {
+          "title": "Goal Id",
+          "type": "string"
+        },
+        "request_id": {
+          "title": "Request Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "goal_id",
+        "request_id"
+      ],
+      "title": "AuthoringBase",
+      "type": "object"
+    },
+    "decisionChildren": {
+      "additionalProperties": false,
+      "properties": {
+        "options": {
+          "items": {
+            "$ref": "#/$defs/decisionoptionsItem"
+          },
+          "title": "Options",
+          "type": "array"
+        }
+      },
+      "title": "decisionChildren",
+      "type": "object"
+    },
+    "decisionFields": {
+      "additionalProperties": false,
+      "properties": {
+        "question": {
+          "title": "Question",
+          "type": "string"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        },
+        "risk_summary": {
+          "title": "Risk Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question",
+        "rationale",
+        "risk_summary"
+      ],
+      "title": "decisionFields",
+      "type": "object"
+    },
+    "decisionSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "client_ref": {
+          "title": "Client Ref",
+          "type": "string"
+        },
+        "kind": {
+          "const": "decision",
+          "title": "Kind",
+          "type": "string"
+        },
+        "fields": {
+          "$ref": "#/$defs/decisionFields"
+        },
+        "children": {
+          "$ref": "#/$defs/decisionChildren"
+        }
+      },
+      "required": [
+        "client_ref",
+        "kind",
+        "fields"
+      ],
+      "title": "decisionSubmission",
+      "type": "object"
+    },
+    "decisionoptionsItem": {
+      "additionalProperties": false,
+      "properties": {
+        "option_id": {
+          "title": "Option Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "consequences": {
+          "title": "Consequences",
+          "type": "string"
+        },
+        "recommended": {
+          "title": "Recommended",
+          "type": "integer"
+        },
+        "position": {
+          "title": "Position",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "label",
+        "description",
+        "consequences",
+        "recommended"
+      ],
+      "title": "decisionoptionsItem",
+      "type": "object"
+    },
+    "planChildren": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/planitemsItem"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "requirements": {
+          "items": {
+            "$ref": "#/$defs/planrequirementsItem"
+          },
+          "title": "Requirements",
+          "type": "array"
+        },
+        "decisions": {
+          "items": {
+            "$ref": "#/$defs/plandecisionsItem"
+          },
+          "title": "Decisions",
+          "type": "array"
+        },
+        "selections": {
+          "items": {
+            "$ref": "#/$defs/planselectionsItem"
+          },
+          "title": "Selections",
+          "type": "array"
+        }
+      },
+      "title": "planChildren",
+      "type": "object"
+    },
+    "planFields": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "design_body": {
+          "title": "Design Body",
+          "type": "string"
+        },
+        "scope_description": {
+          "title": "Scope Description",
+          "type": "string"
+        },
+        "alternatives_body": {
+          "title": "Alternatives Body",
+          "type": "string"
+        },
+        "rollback_body": {
+          "title": "Rollback Body",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "design_body",
+        "scope_description",
+        "alternatives_body",
+        "rollback_body"
+      ],
+      "title": "planFields",
+      "type": "object"
+    },
+    "planSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "client_ref": {
+          "title": "Client Ref",
+          "type": "string"
+        },
+        "kind": {
+          "const": "plan",
+          "title": "Kind",
+          "type": "string"
+        },
+        "fields": {
+          "$ref": "#/$defs/planFields"
+        },
+        "children": {
+          "$ref": "#/$defs/planChildren"
+        }
+      },
+      "required": [
+        "client_ref",
+        "kind",
+        "fields"
+      ],
+      "title": "planSubmission",
+      "type": "object"
+    },
+    "plandecisionsItem": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_id": {
+          "title": "Decision Id",
+          "type": "string"
+        },
+        "decision_revision": {
+          "title": "Decision Revision",
+          "type": "integer"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision_id",
+        "rationale"
+      ],
+      "title": "plandecisionsItem",
+      "type": "object"
+    },
+    "planitemsItem": {
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "design_body": {
+          "title": "Design Body",
+          "type": "string"
+        },
+        "verification_body": {
+          "title": "Verification Body",
+          "type": "string"
+        },
+        "position": {
+          "title": "Position",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "title",
+        "design_body",
+        "verification_body"
+      ],
+      "title": "planitemsItem",
+      "type": "object"
+    },
+    "planrequirementsItem": {
+      "additionalProperties": false,
+      "properties": {
+        "requirement_id": {
+          "title": "Requirement Id",
+          "type": "string"
+        },
+        "requirement_revision": {
+          "title": "Requirement Revision",
+          "type": "integer"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requirement_id",
+        "rationale"
+      ],
+      "title": "planrequirementsItem",
+      "type": "object"
+    },
+    "planselectionsItem": {
+      "additionalProperties": false,
+      "properties": {
+        "selection_id": {
+          "title": "Selection Id",
+          "type": "string"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "selection_id",
+        "rationale"
+      ],
+      "title": "planselectionsItem",
+      "type": "object"
+    },
+    "requirementChildren": {
+      "additionalProperties": false,
+      "properties": {
+        "criteria": {
+          "items": {
+            "$ref": "#/$defs/requirementcriteriaItem"
+          },
+          "title": "Criteria",
+          "type": "array"
+        },
+        "decisions": {
+          "items": {
+            "$ref": "#/$defs/requirementdecisionsItem"
+          },
+          "title": "Decisions",
+          "type": "array"
+        },
+        "selections": {
+          "items": {
+            "$ref": "#/$defs/requirementselectionsItem"
+          },
+          "title": "Selections",
+          "type": "array"
+        }
+      },
+      "title": "requirementChildren",
+      "type": "object"
+    },
+    "requirementFields": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "statement": {
+          "title": "Statement",
+          "type": "string"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "statement",
+        "rationale"
+      ],
+      "title": "requirementFields",
+      "type": "object"
+    },
+    "requirementSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "client_ref": {
+          "title": "Client Ref",
+          "type": "string"
+        },
+        "kind": {
+          "const": "requirement",
+          "title": "Kind",
+          "type": "string"
+        },
+        "fields": {
+          "$ref": "#/$defs/requirementFields"
+        },
+        "children": {
+          "$ref": "#/$defs/requirementChildren"
+        }
+      },
+      "required": [
+        "client_ref",
+        "kind",
+        "fields"
+      ],
+      "title": "requirementSubmission",
+      "type": "object"
+    },
+    "requirementcriteriaItem": {
+      "additionalProperties": false,
+      "properties": {
+        "criterion_id": {
+          "title": "Criterion Id",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "given_text": {
+          "title": "Given Text",
+          "type": "string"
+        },
+        "when_text": {
+          "title": "When Text",
+          "type": "string"
+        },
+        "then_text": {
+          "title": "Then Text",
+          "type": "string"
+        },
+        "required": {
+          "title": "Required",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "description",
+        "given_text",
+        "when_text",
+        "then_text",
+        "required"
+      ],
+      "title": "requirementcriteriaItem",
+      "type": "object"
+    },
+    "requirementdecisionsItem": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_id": {
+          "title": "Decision Id",
+          "type": "string"
+        },
+        "decision_revision": {
+          "title": "Decision Revision",
+          "type": "integer"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision_id",
+        "rationale"
+      ],
+      "title": "requirementdecisionsItem",
+      "type": "object"
+    },
+    "requirementselectionsItem": {
+      "additionalProperties": false,
+      "properties": {
+        "selection_id": {
+          "title": "Selection Id",
+          "type": "string"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "selection_id",
+        "rationale"
+      ],
+      "title": "requirementselectionsItem",
+      "type": "object"
+    },
+    "work_itemChildren": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/work_itemchecksItem"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "requirements": {
+          "items": {
+            "$ref": "#/$defs/work_itemrequirementsItem"
+          },
+          "title": "Requirements",
+          "type": "array"
+        },
+        "plan_items": {
+          "items": {
+            "$ref": "#/$defs/work_itemplan_itemsItem"
+          },
+          "title": "Plan Items",
+          "type": "array"
+        },
+        "dependencies": {
+          "items": {
+            "$ref": "#/$defs/work_itemdependenciesItem"
+          },
+          "title": "Dependencies",
+          "type": "array"
+        }
+      },
+      "title": "work_itemChildren",
+      "type": "object"
+    },
+    "work_itemFields": {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "title": "Operation",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "instruction_body": {
+          "title": "Instruction Body",
+          "type": "string"
+        },
+        "completion_definition": {
+          "title": "Completion Definition",
+          "type": "string"
+        },
+        "workflow_depth": {
+          "title": "Workflow Depth",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation",
+        "title",
+        "instruction_body",
+        "completion_definition",
+        "workflow_depth"
+      ],
+      "title": "work_itemFields",
+      "type": "object"
+    },
+    "work_itemSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "client_ref": {
+          "title": "Client Ref",
+          "type": "string"
+        },
+        "kind": {
+          "const": "work_item",
+          "title": "Kind",
+          "type": "string"
+        },
+        "fields": {
+          "$ref": "#/$defs/work_itemFields"
+        },
+        "children": {
+          "$ref": "#/$defs/work_itemChildren"
+        }
+      },
+      "required": [
+        "client_ref",
+        "kind",
+        "fields"
+      ],
+      "title": "work_itemSubmission",
+      "type": "object"
+    },
+    "work_itemchecksItem": {
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {
+          "title": "Check Id",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "surface": {
+          "title": "Surface",
+          "type": "string"
+        },
+        "required": {
+          "title": "Required",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "description",
+        "surface",
+        "required"
+      ],
+      "title": "work_itemchecksItem",
+      "type": "object"
+    },
+    "work_itemdependenciesItem": {
+      "additionalProperties": false,
+      "properties": {
+        "depends_on_id": {
+          "title": "Depends On Id",
+          "type": "string"
+        },
+        "depends_on_revision": {
+          "title": "Depends On Revision",
+          "type": "integer"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "depends_on_id",
+        "reason"
+      ],
+      "title": "work_itemdependenciesItem",
+      "type": "object"
+    },
+    "work_itemplan_itemsItem": {
+      "additionalProperties": false,
+      "properties": {
+        "plan_id": {
+          "title": "Plan Id",
+          "type": "string"
+        },
+        "plan_revision": {
+          "title": "Plan Revision",
+          "type": "integer"
+        },
+        "plan_item_id": {
+          "title": "Plan Item Id",
+          "type": "string"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan_id",
+        "plan_item_id",
+        "rationale"
+      ],
+      "title": "work_itemplan_itemsItem",
+      "type": "object"
+    },
+    "work_itemrequirementsItem": {
+      "additionalProperties": false,
+      "properties": {
+        "requirement_id": {
+          "title": "Requirement Id",
+          "type": "string"
+        },
+        "requirement_revision": {
+          "title": "Requirement Revision",
+          "type": "integer"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requirement_id",
+        "rationale"
+      ],
+      "title": "work_itemrequirementsItem",
+      "type": "object"
+    },
+    "Amendment": {
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/Target"
+        },
+        "set_fields": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Set Fields",
+          "type": "object"
+        },
+        "upsert_items": {
+          "additionalProperties": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "title": "Upsert Items",
+          "type": "object"
+        },
+        "remove_items": {
+          "additionalProperties": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "title": "Remove Items",
+          "type": "object"
+        }
+      },
+      "required": [
+        "target"
+      ],
+      "title": "Amendment",
+      "type": "object"
+    },
+    "Target": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "decision",
+            "requirement",
+            "plan",
+            "work_item"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Target",
+      "type": "object"
+    },
+    "CheckResult": {
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {
+          "title": "Check Id",
+          "type": "string"
+        },
+        "verdict": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_RUN",
+            "INCONCLUSIVE"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        },
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check_id",
+        "verdict",
+        "explanation"
+      ],
+      "title": "CheckResult",
+      "type": "object"
+    },
+    "CriterionResult": {
+      "additionalProperties": false,
+      "properties": {
+        "requirement_id": {
+          "title": "Requirement Id",
+          "type": "string"
+        },
+        "requirement_revision": {
+          "title": "Requirement Revision",
+          "type": "integer"
+        },
+        "criterion_id": {
+          "title": "Criterion Id",
+          "type": "string"
+        },
+        "verdict": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_RUN",
+            "INCONCLUSIVE"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        },
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requirement_id",
+        "requirement_revision",
+        "criterion_id",
+        "verdict",
+        "explanation"
+      ],
+      "title": "CriterionResult",
+      "type": "object"
+    },
+    "CurrentFact": {
+      "additionalProperties": false,
+      "properties": {
+        "statement": {
+          "title": "Statement",
+          "type": "string"
+        },
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        },
+        "supersedes_id": {
+          "title": "Supersedes Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "statement",
+        "source_id"
+      ],
+      "title": "CurrentFact",
+      "type": "object"
+    },
+    "FailureReport": {
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "enum": [
+            "product",
+            "tool",
+            "reported",
+            "injected",
+            "unclassified"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "expected": {
+          "title": "Expected",
+          "type": "string"
+        },
+        "conditions": {
+          "title": "Conditions",
+          "type": "string"
+        },
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "action": {
+          "title": "Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "classification"
+      ],
+      "title": "FailureReport",
+      "type": "object"
+    },
+    "Output": {
+      "additionalProperties": false,
+      "properties": {
+        "media_type": {
+          "title": "Media Type",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "media_type",
+        "text"
+      ],
+      "title": "Output",
+      "type": "object"
+    },
+    "ResultEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "surface": {
+          "enum": [
+            "source",
+            "unit",
+            "integration",
+            "typecheck",
+            "build",
+            "package",
+            "install",
+            "runtime",
+            "ui",
+            "device",
+            "production"
+          ],
+          "title": "Surface",
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_RUN",
+            "INCONCLUSIVE"
+          ],
+          "title": "Result",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "purpose": {
+          "enum": [
+            "verification",
+            "injection"
+          ],
+          "title": "Purpose",
+          "type": "string"
+        },
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/CheckResult"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "criteria": {
+          "items": {
+            "$ref": "#/$defs/CriterionResult"
+          },
+          "title": "Criteria",
+          "type": "array"
+        },
+        "payload": {
+          "$ref": "#/$defs/Output"
+        }
+      },
+      "required": [
+        "surface",
+        "result",
+        "summary",
+        "method"
+      ],
+      "title": "ResultEvidence",
+      "type": "object"
     }
   },
   "$ref": "#/$defs/command"

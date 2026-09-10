@@ -90,7 +90,16 @@ def basis(core, work_id, revision):
                 'ORDER BY (SELECT sequence FROM events ev WHERE ev.project_id=e.project_id AND ev.id=e.event_id) DESC LIMIT 1',(core.project,dependency['id'],dependency['revision'],check['check_id'])).fetchone()
             require(row is not None and row['result']=='PASS' and row['verdict']=='PASS','EXECUTION_ACTIVE','Dependency verification is incomplete')
             verify_snapshot(core,row['snapshot_id'])
-    return {'goal':goal,'work':work,'records':list(refs.values()),'selections':list(selections.values()),'policy_digest':core.policy_digest()}
+    from .entry_runtime import inspect,assess
+    entry=inspect(core,{'request_id':work['fields']['request_id']})
+    stage=None
+    if entry['interpretation']:
+        stage=assess(core,{'request_id':work['fields']['request_id'],'goal_id':goal['id']})
+        require(not stage['reasons'],'STALE','Request interpretation needs review')
+        require(work['fields']['operation'] not in stage['constraints'],'USER_ACTION_REQUIRED','Requested operation is prohibited')
+        require(not (work['fields']['operation']=='design' and 'design_change' in stage['constraints']),'USER_ACTION_REQUIRED','Design changes prohibited')
+    return {'goal':goal,'work':work,'records':list(refs.values()),'selections':list(selections.values()),'policy_digest':core.policy_digest(),'entry_basis':stage}
+
 
 
 def verify_snapshot(core, ident):
@@ -114,6 +123,8 @@ def risk_basis(core,p,b):
         require(all(r['level']=='low' for r in risks) or b['work']['fields']['workflow_depth']=='full',
                 'USER_ACTION_REQUIRED','Material failure cost requires full design')
     saved=verify_snapshot(core,risks[0]['snapshot_id'])
+    from .learning_runtime import preflight
+    b['learning']=preflight(core,b,saved['id'])
     return risks,saved
 
 
@@ -132,6 +143,13 @@ def prepare(core,p,*,current=False):
         core._decision_select(p['selection'])
     b=basis(core,p['work_id'],p['revision'])
     risks,saved=risk_basis(core,p,b)
+    response=core.c.execute('SELECT p.body_json FROM response_bindings r JOIN action_proposals p ON p.project_id=r.project_id AND p.id=r.proposal_id AND p.revision=r.proposal_revision WHERE r.project_id=? AND r.input_id=?',(core.project,core.interaction)).fetchone()
+    if response:
+        proposed=json.loads(response['body_json']);target=proposed['target']
+        require(proposed['action']==b['work']['fields']['operation'],'USER_ACTION_REQUIRED','Reply approved a different action')
+        require(any(r['kind']==target['kind'] and r['id']==target['id'] and r['revision']==target['revision'] for r in b['records']),'USER_ACTION_REQUIRED','Reply approved a different target')
+        require(proposed['scope_digest']==saved['digest'],'STALE','Reply scope changed')
+        require(proposed['action'] not in proposed['constraints'],'USER_ACTION_REQUIRED','Reply action prohibited')
     proposed_paths=paths(core,saved['scope_id'])
     active=core.c.execute(f'SELECT x.work_item_id,a.scope_id FROM executions x JOIN authorizations a ON a.project_id=x.project_id AND a.id=x.authorization_id '
                           f'WHERE x.project_id=? AND x.state IN {ACTIVE_SQL}',(core.project,)).fetchall()
@@ -141,7 +159,15 @@ def prepare(core,p,*,current=False):
                 'EXECUTION_ACTIVE','Another active work overlaps this source scope')
     op=b['work']['fields']['operation']
     request_op='plan' if op in ('requirements','design','tasks') else 'investigate' if op=='validate' else op
-    request=core.new_request(core.principal.user_text,request_op)
+    # Current-turn authority is checked by the native adapter, not the
+    # convenience operation previously assigned to the same user text.
+    existing=core.c.execute('SELECT id,intent FROM requests WHERE project_id=? AND interaction_id=?',
+                            (core.project,core.interaction)).fetchone() if current else None
+    if existing:
+        require(existing['intent']==core.principal.user_text,'CONFLICT','User request changed')
+        request=existing['id']
+    else:
+        request=core.new_request(core.principal.user_text,request_op)
     if not core.c.execute('SELECT 1 FROM request_goals WHERE project_id=? AND request_id=? AND goal_id=?',(core.project,request,b['goal']['id'])).fetchone():
         records.insert(core.c,'request_goals',dict(project_id=core.project,request_id=request,goal_id=b['goal']['id']))
     auth=uid(); authority_basis=digest({'basis':b,'snapshot':saved['digest'],'risks':[r['digest'] for r in risks]})
@@ -170,7 +196,13 @@ def prepare(core,p,*,current=False):
         core.event=core.event_record('execution.current-turn')
         transition(core,'deliveries',core.one('deliveries',delivery),'accepted')
         transition(core,'executions',core.one('executions',execution),'running',started_at=now(),result_receipt_digest=digest({'source':'current-user-turn','interaction':core.interaction}))
-    return {'execution_id':execution,'delivery_id':delivery,'state':'running' if current else 'prepared','delivery_state':'accepted' if current else 'pending','action':op,'authorization':'ALLOW','scope':proposed_paths}
+    result={'execution_id':execution,'delivery_id':delivery,'state':'running' if current else 'prepared','delivery_state':'accepted' if current else 'pending','action':op,'authorization':'ALLOW','scope':proposed_paths}
+    if current:
+        # Return the exact selections used by this authorization, including labels.
+        result['learning']=b.get('learning',{})
+        result['decision_basis']=[{'selection':s,'decision':records.get(core.c,core.project,'decision',s['decision_id'],s['decision_revision'])} for s in b['selections']]
+        result['basis_notice']='Selections validated at execution entry; refresh context if decisions change before acting.'
+    return result
 
 
 def transition(core, table, row, state, **values):

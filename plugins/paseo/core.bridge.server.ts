@@ -47,15 +47,15 @@ export class CoreClient implements Bridge {
     });
     this.child.stderr.on("data", () => {}); // Consume; avoid leaking host inputs into logs.
     this.child.on("error", (e) => this.fail(e));
-    this.child.on("close", () => this.fail(new Error("Core connection closed; reconnect in this panel")));
+    this.child.on("close", () => this.fail(Object.assign(new Error("Core connection closed"), {code:"CONNECTION_LOST"})));
     this.child.stdin.on("error", (e) => this.fail(e));
   }
   call(payload: Record<string, unknown>): Promise<any> {
-    if (this.closed) return Promise.reject(new Error("Core connection closed"));
+    if (this.closed) return Promise.reject(Object.assign(new Error("Core connection closed"), {code:"CONNECTION_LOST"}));
     if (this.pending.size >= 32) return Promise.reject(new Error("Too many Core requests"));
     const id = randomUUID();
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => this.fail(new Error("Core response timeout; outcome may be unknown")), 30_000);
+      const timer = setTimeout(() => this.fail(Object.assign(new Error("Core response timeout; outcome may be unknown"), {code:"OUTCOME_UNKNOWN"})), 30_000);
       this.pending.set(id, { resolve, reject, timer });
       this.child.stdin.write(JSON.stringify({ id, secret: this.secret, payload }) + "\n");
     });

@@ -25,6 +25,21 @@ def contract():
             definitions[kind+'_'+key]={'type':'object','required':list(columns),'additionalProperties':False,'properties':{
                 col:({'type':'integer','minimum':1} if col.endswith('_revision') else {'type':'integer','enum':[0,1]} if col in ('required','recommended')
                 else {'type':'integer','minimum':0} if col=='position' else {'type':'string','maxLength':65536}) for col in columns}}
+    from pydantic import TypeAdapter
+    from typing_extensions import TypedDict,NotRequired
+    from skip_mcp.authoring_types import AuthoringBase,Submission,Amendment,ResultEvidence,CurrentFact,FailureReport
+    authoring={
+        'authoring.submit':{'base':AuthoringBase,'records':list[Submission]},
+        'authoring.amend':{'base':AuthoringBase,'changes':list[Amendment]},
+        'authoring.result':{'base':AuthoringBase,'snapshot_id':str,'evidence':ResultEvidence,
+                            'execution_id':NotRequired[str],'now':NotRequired[CurrentFact],'failure':NotRequired[FailureReport]}}
+    for variant in variants:
+        name=variant['properties']['command']['const']
+        if name not in authoring:continue
+        model=TypedDict(name,authoring[name]);model.__pydantic_config__={'extra':'forbid'}
+        schema=TypeAdapter(model).json_schema()
+        definitions.update(schema.pop('$defs',{}))
+        variant['properties']['payload']=schema
     return {'$schema':'https://json-schema.org/draft/2020-12/schema','$id':'https://skip.local/schemas/core-v1',
             'title':'SKIP Core generation 1','$defs':definitions,'$ref':'#/$defs/command'}
 

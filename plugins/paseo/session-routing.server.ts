@@ -52,14 +52,14 @@ export class CoreSessions {
   }
   private get(id: string, binding: Binding) {
     const s = this.sessions.get(id);
-    if (!s || s.expires < Date.now() || s.binding.workspaceId !== binding.workspaceId || s.binding.agentId !== binding.agentId || s.binding.uiInstanceId !== binding.uiInstanceId) throw new Error("현재 화면의 연결이 만료됐습니다. 다시 연결하세요.");
+    if (!s || s.expires < Date.now() || s.binding.workspaceId !== binding.workspaceId || s.binding.agentId !== binding.agentId || s.binding.uiInstanceId !== binding.uiInstanceId) throw Object.assign(new Error("현재 화면의 연결이 만료됐습니다."), { code: "CONTEXT_EXPIRED" });
     return s;
   }
   private async verify(api: PaseoApi, id: string, binding: Binding, start = false) {
     const s = this.get(id, binding), observed = await this.observe(api, binding);
     this.get(id, binding); // Recheck after await: the UI might have closed.
     if (JSON.stringify(s.identity) !== JSON.stringify(observed.identity) || s.projectId !== observed.projectId) {
-      for (const stop of s.cleanup) stop(); s.bridge.close(); this.sessions.delete(id); throw new Error("작업 환경이 바뀌었습니다. 현재 화면에서 다시 연결하세요.");
+      for (const stop of s.cleanup) stop(); s.bridge.close(); this.sessions.delete(id); throw Object.assign(new Error("작업 환경이 바뀌었습니다."), { code: "TARGET_CHANGED" });
     }
     if (start && (!s.canStart || observed.status !== "idle")) throw new Error("현재 대화가 실행 중이거나 확인되지 않았습니다. 선택을 저장하고 나중에 실행하세요.");
     return s;

@@ -61,6 +61,9 @@ class NativeBridge:
                 old=self.db.connection.execute('SELECT command_digest FROM command_receipts WHERE project_id=? AND principal_digest=? AND command_key=?',
                     (principal.project_id,principal.fingerprint,command['key'])).fetchone()
                 if not old:self.context.consume(p['ticket'],command,principal)
+            if command['command']=='response.bind':
+                from dataclasses import replace
+                principal=replace(principal,response_ref=(command['payload']['proposal_id'],command['payload']['revision']))
             return self.core.execute(command,principal,self.context)
         delivery=Delivery(self.core,self.context)
         if operation=='claim':

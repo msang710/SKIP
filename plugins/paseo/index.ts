@@ -1,3 +1,4 @@
+import { rpcResult } from "./core.recovery";
 import type { PluginContext } from "@getpaseo/plugin";
 import { CorePanel } from "./core.panel.client";
 import { coreSessions } from "./session-routing.server";
@@ -11,8 +12,8 @@ export default function contribute(plugin: PluginContext) {
     if (!cleanup.length) cleanup.push(() => coreSessions.dispose());
     return coreSessions.connect(paseo, input);
   });
-  plugin.handle(queryCore, (input, { paseo }) => coreSessions.query(paseo, input.sessionId, input, input.query, input.payload));
-  plugin.handle(userCore, (input, { paseo }) => coreSessions.user(paseo, input.sessionId, input, input.command, input.key, input.payload));
+  plugin.handle(queryCore, (input, { paseo }) => rpcResult(() => coreSessions.query(paseo, input.sessionId, input, input.query, input.payload)));
+  plugin.handle(userCore, (input, { paseo }) => rpcResult(() => coreSessions.user(paseo, input.sessionId, input, input.command, input.key, input.payload)));
   plugin.handle(closeCore, (input) => coreSessions.close(input.sessionId, input));
   plugin.handle(searchIntentInvocations, ({ query }) => searchCoreInvocations(query));
   plugin.addAttachmentSource(intentInvocationSource);

@@ -4,13 +4,15 @@ The Python application API owns all business state. SQLite is the sole runtime r
 
 ## Entry and query
 
-Prefer connected MCP tools: `skip_status`, `skip_context`, `skip_decisions`, `skip_assess_risk`, `skip_propose`, `skip_observe`, `skip_record_result`, `skip_execution_status`.
+Prefer connected MCP tools: `skip_status`, `skip_context`, `skip_decisions`, `skip_assess_risk`, `skip_submit`, `skip_amend`, `skip_result`, `skip_observe`, `skip_record_result`, `skip_execution_status`.
 
 Installed Linux uses `skip --workspace <root>` and `skip diagnose` through the active launcher. Do not select an old resolved release path from conversation history. For source development, the module CLI is `python -m skip_core.cli --project <id> query <status|inbox|context|record|trace|execution.status|settings|risks> --input '<JSON>'`. `--workspace` supplies an explicitly connected source root. Commands come from stdin to `command`; this route is agent-only and cannot grant user authority. `activate`/`request` are actual interactive fallback entrypoints. Do not simulate their confirmation.
 
 The Codex native module is `python -m adapters.codex.entry --workspace <root> [--project <id>] [--goal <id>]`. The adapter reads only the selected actual host session. On Windows the distributed `skip.cmd` uses the bundled interpreter. `--activate` accepts a current explicit SKIP invocation and creates project/source metadata only. Repeating an anchored request is idempotent. Host formats with no stable user-message identity fail closed.
 
 `--begin-current '<JSON>'` takes work_id, revision, goal_risk_id and change_risk_id. It validates the current user turn and starts a Core execution for that already-running agent, without sending another prompt. `--finish-current <execution-id>` records that agent's work report; evidence completeness remains separate. UI dispatch uses the native adapter channel instead.
+
+For writing records, use [authoring-tools.md](authoring-tools.md). The low-level revision API remains available for compatibility.
 
 ## Command contract
 
@@ -90,3 +92,35 @@ compatibility. Packaged Windows entrypoints use their bundled runtime. Developme
 module invocation remains a source checkout fallback. SQLite access, read-only,
 busy/locked, corruption, and actual schema mismatch errors remain distinct; queries
 never migrate or replace the DB in response to an error.
+
+## Saved requests and incomplete decisions
+
+`request.list` supports goal_id/cursor/limit and returns bounded previews; `request` takes id and returns exact text and linked goals within the current project. MCP exposes skip_requests/skip_request. UI save does not dispatch; an explicit request attachment targets only the current composer. Reading or attaching a request never grants execution authority.
+
+Inbox action_state distinguishes needs_options, needs_selection and selected. Historical decisions without options remain readable under records needing clarification, not actionable decision cards. Preserve paging across both classes; do not invent missing options or approvals.
+
+## Current decision reads
+
+Decision `record`, `inbox`, and `context` projections share `selection`, `selected_option`, `selection_state` and `selection_stale`. A revoked, superseded or wrong-revision selection is never returned as the active choice. Context budgeting counts these fields and reports omitted records as incomplete. Context completeness is not approval or proof that every decision is resolved.
+
+Codex entry with an explicit goal includes a freshly queried restore context, including on status/continuation turns. New requests include their resulting goal context; no goal is inferred from a latest unrelated selection. Current-turn execution returns `decision_basis` used at entry. These are reads and gate results, not automatic model injection or permission to skip the gate. Before a relevant answer or resumed implementation, the skill reads the current context through CLI or MCP. No host hook is required.
+
+## Learning generation (schema 5)
+
+`learning.propose` stores typed failure/guideline/claim/boundary/environment/obligation/scenario versions with exact links. `learning.accept` is native-human only and binds a product selection to the exact contract digest. `failure.report`, `failure.attempt.record`, `guideline.assess`, `verification.run.start/finish`, `assurance.evaluate` share the standard receipt envelope. `learning.list/record`, `guidance`, `assurance` are bounded read queries. MCP `skip_learning` and `skip_record_learning` are thin wrappers; acceptance is not exposed to agents.
+
+Environment manifests must match their attached evidence payload. Run injection and behavior results differ. All required scenarios at the declared boundary must have matching evidence; empty contracts, wrong environments, unfinished runs and conflicting runs never become supported. Candidate contracts remain advisory; accepted contract changes invalidate preflight. Physical write interception is not included.
+
+Use explicit `upgrade-candidate` to create and validate a new upgraded DB copy. It does not switch the active DB. Stop writers and verify no intervening writes before a separately authorized cutover; do not run old writers on schema 5 or roll back only the executable. Existing historical FAIL backfill is not automatic.
+
+## Entry and stage contract (schema 6 development)
+
+`input.ingest` is native-only and derives route and content from Principal, never model-supplied `verified` JSON. Native `request.submit` also records its input and initial parser interpretation atomically. `intent.propose` appends a CAS revision under that request with acts, constraints, exact targets, instruction spans and unresolved reasons. It cannot discard explicit prohibitions or promote its caller's authority.
+
+`entry.inspect` and `stage.assess` are read-only; `context` accepts an explicit request_id and supplies entry_basis/stage_assessment within the same response budget. Stage assessment is a preparation projection, not execution approval. Existing execution basis still validates precise work/requirement/plan/check relationships and now includes current intent constraints and target freshness.
+
+Schema 6 reuses interactions, requests and events. Immutable input_envelopes store bounded structured content parts as one JSON body; intent_interpretations, action_proposals and response_bindings retain exact revisions through project-scoped foreign keys. A proposal's display_ref binds a short reply only when the native adapter verifies the exact shown proposal; native UI additionally uses the existing exact-command ticket. Scope or target changes require a new proposal. Actual host connection handles remain ephemeral. These adapter assertions do not isolate arbitrary same-OS-user code.
+
+Host-provided structured roles are authoritative only to the extent the adapter verifies them. Codex text envelope and selector classification remain explicitly parser-derived; unsupported mixed content is not silently promoted. Plain text cannot establish which original UI injected it. The initial suggestion parser is intentionally conservative and not a complete semantic classifier. Complex requests require a grounded interpretation and native authorization; no confidence score creates authority.
+
+Upgrade only a new candidate DB first. Old inputs remain readable without reconstructed provenance. Do not run a schema-4/5 writer against schema 6 or rewrite project history to make old inputs appear verified.

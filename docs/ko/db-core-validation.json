@@ -1,0 +1,78 @@
+{
+  "schema": "skip-development-evidence/v1",
+  "date": "2026-09-10",
+  "scope": "mcp-unified-core P0-P7 development",
+  "tests": {
+    "new_core_native_mcp": {
+      "passed": 30
+    },
+    "legacy_python": {
+      "passed": 126,
+      "skipped_windows": 3
+    },
+    "paseo": {
+      "passed": 35
+    },
+    "mcp_app": {
+      "passed": 2
+    },
+    "typescript": "PASS",
+    "package_manifest_and_source_match": "PASS"
+  },
+  "package": {
+    "path": "dist/skip-core-0.3.0-dev.1-windows-x64.zip",
+    "sha256": "f207c6c5890b4fce34616071fffdf30856c562c8aa594c866b87ff4e0de5b342",
+    "files": 1618,
+    "wheels": 30
+  },
+  "benchmark": {
+    "kind": "synthetic_local_baseline",
+    "results": [
+      {
+        "goals": 100,
+        "samples": 10,
+        "median_ms": 0.476,
+        "max_ms": 1.231,
+        "returned_goals": 30,
+        "page_continues": true
+      },
+      {
+        "goals": 1000,
+        "samples": 10,
+        "median_ms": 1.135,
+        "max_ms": 1.545,
+        "returned_goals": 30,
+        "page_continues": true
+      },
+      {
+        "goals": 10000,
+        "samples": 10,
+        "median_ms": 4.267,
+        "max_ms": 5.389,
+        "returned_goals": 30,
+        "page_continues": true
+      }
+    ],
+    "production_claim": false
+  },
+  "not_run": [
+    "Windows bundled execution",
+    "Windows app installation and first entry",
+    "live Paseo same-thread dispatch",
+    "live UI visual/keyboard acceptance",
+    "remote CI"
+  ],
+  "not_performed": [
+    "installed writer replacement",
+    "production DB creation or migration",
+    "deployment/restart",
+    "remote push"
+  ],
+  "limitations": [
+    "advisory; no host write interception",
+    "no generic MCP human authentication or universal turn start",
+    "no atomic idle-conditioned Paseo send",
+    "no wired Paseo interruption or durable receipt lookup",
+    "same-OS-user arbitrary code is outside the provenance trust boundary"
+  ]
+}

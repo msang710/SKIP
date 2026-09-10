@@ -13,10 +13,10 @@ from curses.textpad import Textbox
 from pathlib import Path
 from typing import Any, Callable
 
-try:
+if not __package__:
     import intent_context
     from skip_setup import DEFAULT_CORE_RULES, RuleConfigurationError, RulePaths, SetupService
-except ModuleNotFoundError:  # Imported as scripts.skip_cli in tests.
+else:
     from scripts import intent_context
     from scripts.skip_setup import DEFAULT_CORE_RULES, RuleConfigurationError, RulePaths, SetupService
 

@@ -1,41 +1,24 @@
 import type { PluginContext } from "@getpaseo/plugin";
+import { CorePanel } from "./core.panel.client";
+import { coreSessions } from "./session-routing.server";
+import { connectCore, queryCore, userCore, closeCore } from "./core.shared";
 import { intentInvocationSource, searchIntentInvocations } from "./intent.shared";
-import { searchIntent } from "./intent.server";
-import { IntentRecordsPanel } from "./records.client";
-import { decisionInbox, exactRecordAttachment, listRecords, readRecord, resolveProject, searchRecordAttachments } from "./records.server";
-import { getDecisionInbox, getIntentRecordAttachment, intentRecordSource, listIntentRecords, readIntentRecord, resolveIntentProject, searchIntentRecords } from "./records.shared";
+import { searchCoreInvocations } from "./core.invocations";
 
 export default function contribute(plugin: PluginContext) {
-  plugin.handle(searchIntentInvocations, ({ query }) => searchIntent(query));
-  plugin.handle(resolveIntentProject, ({ paseoProjectId, projectRootPath }) => resolveProject(paseoProjectId, projectRootPath));
-  plugin.handle(listIntentRecords, async ({ paseoProjectId, projectRootPath, scope, query }) => {
-    const project = await resolveProject(paseoProjectId, projectRootPath);
-    return { projectId: project.projectId, items: await listRecords(project.projectId, scope, query) };
+  const cleanup: Array<() => void> = [];
+  plugin.handle(connectCore, (input, { paseo }) => {
+    if (!cleanup.length) cleanup.push(() => coreSessions.dispose());
+    return coreSessions.connect(paseo, input);
   });
-  plugin.handle(readIntentRecord, ({ projectId, relativePath }) => readRecord(projectId, relativePath));
-  plugin.handle(getIntentRecordAttachment, ({ projectId, relativePath }) => exactRecordAttachment(projectId, relativePath));
-  plugin.handle(getDecisionInbox, async ({ paseoProjectId, projectRootPath, goal }) => {
-    const project = await resolveProject(paseoProjectId, projectRootPath);
-    return decisionInbox(project.projectId, goal);
-  });
-  plugin.handle(searchIntentRecords, ({ query }) => searchRecordAttachments(query));
+  plugin.handle(queryCore, (input, { paseo }) => coreSessions.query(paseo, input.sessionId, input, input.query, input.payload));
+  plugin.handle(userCore, (input, { paseo }) => coreSessions.user(paseo, input.sessionId, input, input.command, input.key, input.payload));
+  plugin.handle(closeCore, (input) => coreSessions.close(input.sessionId, input));
+  plugin.handle(searchIntentInvocations, ({ query }) => searchCoreInvocations(query));
   plugin.addAttachmentSource(intentInvocationSource);
-  plugin.addAttachmentSource(intentRecordSource);
-  plugin.addWorkspacePanel({
-    id: "intent-records",
-    title: "SKIP Records",
-    icon: "FileText",
-    context: "workspace",
-    locations: ["workspace", "explorer"],
-    Component: IntentRecordsPanel,
-  });
-  plugin.addCommandCenterItem({
-    id: "open-intent-records",
-    title: "Open SKIP Records",
-    icon: "FileText",
-    keywords: ["intent", "now", "spec", "기록"],
-    context: "workspace",
-    onSelect({ openPanel }) { openPanel("intent-records"); },
-  });
-  return () => {};
+  plugin.addWorkspacePanel({ id: "intent-records", title: "SKIP", icon: "ListFilter", context: "workspace", locations: ["workspace", "explorer"], Component: CorePanel });
+  plugin.addWorkspacePanel({ id: "skip-current-agent", title: "SKIP", icon: "ListFilter", context: "agent", Component: CorePanel });
+  plugin.addCommandCenterItem({ id: "open-skip-workspace", title: "SKIP 현재 상태", icon: "ListFilter", context: "workspace", onSelect({ openPanel }) { openPanel("intent-records"); } });
+  plugin.addCommandCenterItem({ id: "open-skip-agent", title: "SKIP 이 대화에서 작업", icon: "ListFilter", context: "agent", onSelect({ openPanel }) { openPanel("skip-current-agent"); } });
+  return () => { for (const stop of cleanup) stop(); };
 }

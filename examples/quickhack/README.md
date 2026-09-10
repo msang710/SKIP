@@ -21,7 +21,21 @@ Should a customer-requested device be allowed when it differs from the original 
 | **D-010:** 이미 시작된 출고 업무 > 확정 수동 변경 > 자동 매칭 / Started downstream work > confirmed manual change > automatic matching | 이미 진행된 출고는 보호하고 자동 매칭은 수동 변경을 존중 / Protect downstream work and prioritize confirmed manual changes | 확정 실행의 임시 선점, 잠금 후 재검증, 경합 테스트 / Intent leases, locked revalidation, concurrency tests |
 | **R-004:** 이전 기기 해제와 새 기기 예약은 함께 성공 / Release the previous device and reserve the replacement together | 한쪽만 바뀐 재고 상태를 남기지 않음 / No partially replaced inventory | 원장·allocation·감사의 원자적 변경 / Atomic ledger, allocation, and audit changes |
 
-## 실제로 이런 문서가 나옵니다 / The actual document outputs
+## 현재 Core로 이관한 목표 / The migrated goal
+
+**[목표와 기록 읽기 / Read the goal records](records.md)** · [SQLite 사례 DB / Case database](case.db) · [이관 검증 / Migration checks](migration.json)
+
+`manual-order-inventory-matching` 하나의 목표에 속한 아래 공개 발췌본 네 개만 이관했습니다. 다른 목표·개인 DB·비공개 원문은 포함하지 않았습니다. 현재 Core API로 조회되는 목표 1개, 결정 9개, 요구사항 15개, 설계 1개, 작업 3개를 확인할 수 있습니다. 본문의 이유·설명·검증 조건은 해당 기록의 필드와 하위 항목에 보존했습니다.
+
+Only the four previously published excerpts below were migrated, all belonging to this one goal. No other goals, private database, or unpublished originals are included. The current Core exposes one goal, nine decisions, fifteen requirements, one plan, and three work items, retaining their explanatory text and verification conditions.
+
+`records.md`는 사례 DB를 Core의 `record.list` / `record`로 읽어 생성한 공개용 뷰입니다. 별도로 편집하는 업무 저장소가 아닙니다. 원본 바이트·SHA-256·외래 키·DB 무결성과 모든 기록의 Core 조회를 검사했습니다. 이관으로 생성한 신규 승인·선택·실행·검증 증거는 모두 0개입니다. 발췌본 밖의 T-005~T-010, T-029 참조 7개는 미확정으로 남겼습니다.
+
+The publication view is generated from Core queries of the case DB, not a separately edited business store. Original bytes/hashes, foreign keys, integrity, and all record reads were checked. Migration creates no fresh approvals, selections, executions, or verification evidence. Seven references outside the excerpts remain unresolved.
+
+개발 환경에서 새 경로로 재생성: `python tools/build_quickhack_case.py --output /tmp/quickhack-public-case` (Core 및 유지보수 의존성 필요). 이 도구의 입력은 아래 네 파일로 고정되며 실제 사용자 DB를 읽지 않습니다.
+
+## 출처 발췌본 / Inactive source excerpts
 
 | 문서 / Document | 확인할 내용 / What it demonstrates |
 |---|---|

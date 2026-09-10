@@ -14,6 +14,7 @@ export const recordSummarySchema = z.object({
   created: z.string().optional(),
   updated: z.string().optional(),
   sourceRevision: z.string().optional(),
+  verifiedAt: z.string().optional(),
   byteLength: z.number().int().nonnegative(),
 });
 
@@ -111,4 +112,10 @@ export const intentRecordSource = defineAttachmentSource({
   pickerTitle: "SKIP 기록 첨부",
   searchPlaceholder: "예: NOW · project:quickhack-public-portfolio · tasks",
   search: searchIntentRecords,
+});
+
+export const readRecordGroup = defineRpc({
+  name: "intent-records.read-group",
+  input: z.object({ projectId: z.string().min(1).max(200), paths: z.array(z.string().min(1).max(4096)).min(1).max(24) }),
+  output: z.object({ documents: z.array(z.object({ record: recordSummarySchema, text: z.string() })), errors: z.array(z.object({ path: z.string(), message: z.string() })) }),
 });

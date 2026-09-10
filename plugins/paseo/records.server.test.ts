@@ -93,3 +93,28 @@ test("reads Decision Inbox through the bounded SKIP runtime adapter", async () =
   assert.equal(result.schema, "decision-inbox/v1");
   assert.equal(result.goal, "goal");
 });
+
+test("group reads preserve source metadata and isolate missing/cross-project records", async () => {
+  const { readGroup } = await import("./records.server");
+  const root = await mkdtemp(join(tmpdir(), "intent-group-"));
+  process.env.INTENT_TO_CODE_RECORD_ROOT = root;
+  await mkdir(join(root, "projects", "demo", "NOW", "goals"), { recursive: true });
+  await writeFile(join(root, "projects", "demo", "project.yaml"), "project_id: demo\n");
+  const path = "projects/demo/NOW/goals/search.md";
+  await writeFile(join(root, path), "---\nverified_at: 2026-09-10\nverified_revision: abc\n---\n# 검색\n검색 구현\n");
+  const result = await readGroup("demo", [path, "projects/other/NOW/a.md", "projects/demo/NOW/missing.md"]);
+  assert.equal(result.documents.length, 1); assert.equal(result.errors.length, 2);
+  assert.equal(result.documents[0].record.verifiedAt, "2026-09-10");
+  assert.equal(result.documents[0].record.sourceRevision, "abc");
+  await assert.rejects(readGroup("demo", Array(25).fill(path)), /24/);
+});
+test("group reads refuse unrelated goals", async () => {
+  const { readGroup } = await import("./records.server");
+  const root = await mkdtemp(join(tmpdir(), "intent-group-"));
+  process.env.INTENT_TO_CODE_RECORD_ROOT = root;
+  await mkdir(join(root, "projects", "demo", "NOW", "goals"), { recursive: true });
+  await writeFile(join(root, "projects", "demo", "project.yaml"), "project_id: demo\n");
+  for (const name of ["a", "b"]) await writeFile(join(root, `projects/demo/NOW/goals/${name}.md`), `# ${name}`);
+  const result = await readGroup("demo", ["projects/demo/NOW/goals/a.md", "projects/demo/NOW/goals/b.md"]);
+  assert.equal(result.documents.length, 1); assert.match(result.errors[0].message, /다른 작업/);
+});

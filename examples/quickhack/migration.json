@@ -1,0 +1,120 @@
+{
+  "goal": "manual-order-inventory-matching",
+  "project": "quickhack-public-case",
+  "source_files": [
+    {
+      "name": "prd.md",
+      "sha256": "719aba5756339adab73d20dc30b783676f26d39dfe974692f5f7d1ea081218df"
+    },
+    {
+      "name": "system_design.md",
+      "sha256": "a87cfdfb7b35f659ca6ba7ed199ce1d2731ee0ddf91f1288b3ba0a2b44e17022"
+    },
+    {
+      "name": "tasks.md",
+      "sha256": "69eea09eb34a19d27ebfbc42523c42722afcffaececb402018d7917a8907fa55"
+    },
+    {
+      "name": "user_stories.md",
+      "sha256": "efbe7a70429ba32018b44ea5450c5a8765e2e4dff554db5a20020bc60f1d85fc"
+    }
+  ],
+  "scope": "Four previously published excerpts only; no live database or other goals.",
+  "counts": {
+    "goal": 1,
+    "decision": 9,
+    "requirement": 15,
+    "plan": 1,
+    "work_item": 3
+  },
+  "migration": {
+    "status": "VERIFIED",
+    "inventory_digest": "22028d364e4e919bfa409c6cd9e4ebb6febe2d32bafb2df431e3371e0ed1957a",
+    "files": 4,
+    "excluded_git_files": 0,
+    "projects": [
+      {
+        "project_id": "quickhack-public-case",
+        "files": 4,
+        "goals": 1,
+        "structured_records": 3
+      }
+    ],
+    "source_hashes_verified": true,
+    "fresh_approvals": 0,
+    "fresh_evidence_passes": 0,
+    "executions": 0
+  },
+  "repair": {
+    "counts": {
+      "goal": 1,
+      "decision": 9,
+      "requirement": 15,
+      "plan": 1,
+      "work_item": 3
+    },
+    "excluded": [],
+    "unresolved_links": [
+      {
+        "project": "quickhack-public-case",
+        "goal": "manual-order-inventory-matching",
+        "document": "features/manual-order-inventory-matching/tasks.md",
+        "from": "T-010A",
+        "target": "T-005"
+      },
+      {
+        "project": "quickhack-public-case",
+        "goal": "manual-order-inventory-matching",
+        "document": "features/manual-order-inventory-matching/tasks.md",
+        "from": "T-010A",
+        "target": "T-006"
+      },
+      {
+        "project": "quickhack-public-case",
+        "goal": "manual-order-inventory-matching",
+        "document": "features/manual-order-inventory-matching/tasks.md",
+        "from": "T-010A",
+        "target": "T-007"
+      },
+      {
+        "project": "quickhack-public-case",
+        "goal": "manual-order-inventory-matching",
+        "document": "features/manual-order-inventory-matching/tasks.md",
+        "from": "T-010A",
+        "target": "T-008"
+      },
+      {
+        "project": "quickhack-public-case",
+        "goal": "manual-order-inventory-matching",
+        "document": "features/manual-order-inventory-matching/tasks.md",
+        "from": "T-010A",
+        "target": "T-009"
+      },
+      {
+        "project": "quickhack-public-case",
+        "goal": "manual-order-inventory-matching",
+        "document": "features/manual-order-inventory-matching/tasks.md",
+        "from": "T-010A",
+        "target": "T-010"
+      },
+      {
+        "project": "quickhack-public-case",
+        "goal": "manual-order-inventory-matching",
+        "document": "features/manual-order-inventory-matching/tasks.md",
+        "from": "T-030",
+        "target": "T-029"
+      }
+    ],
+    "originals": 4
+  },
+  "validation": {
+    "core_records_read": 29,
+    "original_bytes_preserved": true,
+    "foreign_keys": "PASS",
+    "integrity": "PASS",
+    "fresh_approvals": 0,
+    "executions": 0,
+    "fresh_evidence": 0
+  },
+  "db_sha256": "1a330360ae0e495ac1e16e5d9a501d200deb5a3530b1f9309179f3a929d17296"
+}

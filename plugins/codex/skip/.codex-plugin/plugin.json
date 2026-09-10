@@ -1,0 +1,21 @@
+{
+  "name": "skip",
+  "version": "0.3.0-dev.1",
+  "description": "Read the decisions. Skip the implementation details.",
+  "author": {
+    "name": "msang710"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "SKIP",
+    "shortDescription": "기존 에이전트에서 결정과 결과만 읽으며 개발하세요.",
+    "longDescription": "작업의 실패 영향에 맞춰 조사, 제품 결정, 구현과 검증의 깊이를 조절합니다. 기존 IDE와 에이전트를 그대로 사용합니다.",
+    "developerName": "msang710",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "이 프로젝트에서 SKIP으로 개발을 도와줘."
+  },
+  "homepage": "https://github.com/msang710/SKIP",
+  "repository": "https://github.com/msang710/SKIP",
+  "license": "GPL-3.0-only"
+}

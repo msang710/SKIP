@@ -17,7 +17,11 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-try:
+# A direct script invocation and its libraries must share one selector class/state.
+if __name__ == "__main__":
+    sys.modules["intent_context"] = sys.modules[__name__]
+
+if not __package__:
     from skip_setup import (
         DEFAULT_CORE_RULES,
         RuleConfigurationError,
@@ -27,7 +31,7 @@ try:
         validate_core_config as validate_core_config_shared,
         validate_project_rules as validate_project_rules_shared,
     )
-except ModuleNotFoundError:  # Imported as scripts.intent_context in tests.
+else:
     from scripts.skip_setup import (
         DEFAULT_CORE_RULES,
         RuleConfigurationError,
@@ -136,12 +140,13 @@ def platform_registry() -> Path:
 
 
 def selected_record_root(args: argparse.Namespace) -> tuple[Path, str]:
-    if args.record_root:
-        return Path(args.record_root).expanduser().resolve(), "explicit"
     configured = os.environ.get("INTENT_TO_CODE_RECORD_ROOT", "").strip()
-    if configured:
-        return Path(configured).expanduser().resolve(), "environment"
-    return platform_data_root().expanduser().resolve(), "platform-default"
+    root, source = ((Path(args.record_root).expanduser().resolve(), "explicit") if args.record_root else
+                    (Path(configured).expanduser().resolve(), "environment") if configured else
+                    (platform_data_root().expanduser().resolve(), "platform-default"))
+    if (root / "skip.db").is_file():
+        raise SelectionError("This record store uses SQLite Core. Use skip query/context/history; the file runtime is retired.")
+    return root, source
 
 
 def exact_date(value: str) -> str:
@@ -261,7 +266,16 @@ def scalar_yaml(path: Path) -> dict[str, Any]:
     stack: list[tuple[int, dict[str, Any]]] = [(-1, result)]
     if not path.exists():
         return result
-    for raw in path.read_text(encoding="utf-8").splitlines():
+    raw_text = path.read_text(encoding="utf-8")
+    if raw_text.lstrip().startswith("{"):
+        try:
+            value = json.loads(raw_text)
+        except json.JSONDecodeError as exc:
+            raise SelectionError(f"invalid JSON-compatible YAML: {path}") from exc
+        if not isinstance(value, dict):
+            raise SelectionError(f"expected mapping: {path}")
+        return value
+    for raw in raw_text.splitlines():
         if not raw.strip() or raw.lstrip().startswith("#") or ":" not in raw:
             continue
         indent = len(raw) - len(raw.lstrip(" "))
@@ -297,26 +311,24 @@ def runtime_id(value: str, label: str) -> str:
     return value
 
 
+def _git_output(workspace: Path, *arguments: str) -> str | None:
+    try:
+        proc = subprocess.run(["git", "-C", str(workspace), *arguments], text=True,
+                              stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                              check=False, timeout=8)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return proc.stdout.strip() if proc.returncode == 0 else None
+
+
 def git_root(workspace: Path) -> Path | None:
-    proc = subprocess.run(
-        ["git", "-C", str(workspace), "rev-parse", "--show-toplevel"],
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        check=False,
-    )
-    return Path(proc.stdout.strip()).resolve() if proc.returncode == 0 else None
+    value = _git_output(workspace, "rev-parse", "--show-toplevel")
+    return Path(value).resolve() if value else None
 
 
 def git_identity(workspace: Path) -> str | None:
-    proc = subprocess.run(
-        ["git", "-C", str(workspace), "remote", "get-url", "origin"],
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        check=False,
-    )
-    return normalize_remote(proc.stdout) if proc.returncode == 0 else None
+    value = _git_output(workspace, "remote", "get-url", "origin")
+    return normalize_remote(value) if value else None
 
 
 def registry_projects(registry: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -838,14 +850,16 @@ def resolve_goal_query(args: argparse.Namespace) -> dict[str, Any]:
         overlap = len(query_term_set & candidate_terms)
         if overlap:
             ranked.append((overlap, "unique-terms", candidate["slug"], candidate))
-    ranked.sort(key=lambda item: (-item[0], item[2]))
+    # Phrase tiers outrank any number of incidental overlapping words.
+    tiers = {"exact-slug": 3, "exact-title": 2, "unique-terms": 1}
+    ranked.sort(key=lambda item: (-tiers[item[1]], -item[0], item[2]))
     status = "no_match"
     goal = None
     method = None
     output_candidates: list[dict[str, Any]] = []
     if ranked:
         best_score = ranked[0][0]
-        best = [item for item in ranked if item[0] == best_score]
+        best = [item for item in ranked if item[0] == best_score and item[1] == ranked[0][1]]
         if len(best) == 1 and (best_score >= 2 or best[0][1].startswith("exact-")):
             status = "resolved"
             goal = best[0][2]
@@ -1231,6 +1245,8 @@ def resolve_project(args: argparse.Namespace) -> ResolvedProject:
         )
 
     project_dir = resolve_beneath(root, Path("projects") / project_id)
+    if (project_dir / ".bootstrap-pending").exists():
+        raise SelectionError("project bootstrap is incomplete; recover its transaction first")
     if not project_dir.is_dir():
         raise SelectionError(f"record project does not exist: {project_id}")
     project_file = project_dir / "project.yaml"
@@ -1544,6 +1560,8 @@ def parser() -> argparse.ArgumentParser:
     context.add_argument("--max-chars", type=int, default=DEFAULT_CONTEXT_MAX_CHARS)
     context.add_argument("--environment-id", help="select matching environment-scoped Project Rules")
     context.add_argument("--operation", help="select matching operation-scoped Project Rules")
+    commands.add_parser("entry", help="minimal shared entry; run entry --help for options")
+    commands.add_parser("prepare-v2", help="risk-adaptive shared entry; run prepare-v2 --help")
     prepare = commands.add_parser("prepare", help="prepare a read-only workflow plan; never approve or execute writes")
     add_identity_arguments(prepare)
     add_selection_arguments(prepare)
@@ -1617,9 +1635,9 @@ def parser() -> argparse.ArgumentParser:
 
 
 def decision_runtime_for(args: argparse.Namespace) -> Any:
-    try:
+    if not __package__:
         from decision_runtime import DecisionRuntime
-    except ModuleNotFoundError:
+    else:
         from scripts.decision_runtime import DecisionRuntime
     resolved = resolve_project(args)
     return DecisionRuntime(resolved.project_dir, resolved.project_id, safe_slug(args.goal, "goal"))
@@ -1637,13 +1655,22 @@ def command_object(path_value: str) -> dict[str, Any]:
 
 
 def main() -> int:
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
+    if len(sys.argv) > 1 and sys.argv[1] in {"entry", "prepare-v2"}:
+        if not __package__:
+            from workflow_entry import main as entry_main
+        else:
+            from scripts.workflow_entry import main as entry_main
+        return entry_main(sys.argv[2:])
     args = parser().parse_args()
     try:
         if args.command in {"prepare", "report"}:
-            try:
+            if not __package__:
                 from workflow_runtime import prepare_workflow
                 from workflow_report import validate_result, render_brief, render_detail
-            except ModuleNotFoundError:
+            else:
                 from scripts.workflow_runtime import prepare_workflow
                 from scripts.workflow_report import validate_result, render_brief, render_detail
             if args.command == "prepare":

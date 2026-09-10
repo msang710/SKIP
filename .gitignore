@@ -10,3 +10,11 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+/dist/
+
+/.build/
+
+# JavaScript dependencies and generated UI
+node_modules/
+/ui/mcp-app/dist/

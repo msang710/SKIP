@@ -10,9 +10,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-try:
+if not __package__:
     from decision_runtime_store import RuntimeStore, StoreError, canonical_bytes
-except ModuleNotFoundError:
+else:
     from scripts.decision_runtime_store import RuntimeStore, StoreError, canonical_bytes
 
 

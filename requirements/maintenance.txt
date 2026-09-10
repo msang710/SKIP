@@ -1,0 +1,2 @@
+# Only for the offline, explicitly requested legacy migration and its tests.
+PyYAML==6.0.3

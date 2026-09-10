@@ -114,3 +114,14 @@ def render_brief(value: Any) -> str:
 def render_detail(value: Any) -> str:
     result = validate_result(value)
     return render_brief(result) + "\n" + json.dumps(result, ensure_ascii=False, indent=2) + "\n"
+
+
+def result_status_view(value: Any, goal: str) -> dict[str, Any]:
+    """One shared human view; supplied evidence keeps its original surface/status."""
+    result = validate_result(value)
+    summary = build_summary(result)
+    return {"schema": "status-view/v1", "goal": goal,
+            "outcome": summary["result"], "decision_needed": [result["next_decision"]] if result["next_decision"] else [],
+            "recommendation": None, "risk_summary": [], "checks": result["evidence"],
+            "gaps": summary["remaining"], "next_action": "done" if result["outcome_status"] == "complete" else "verify",
+            "detail_refs": ["result", "source_snapshot"]}

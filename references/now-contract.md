@@ -14,7 +14,9 @@ Authority order:
 
 Record conflicts and repair affected NOW claims. Use `INFERENCE`, `GAP`, or `EVIDENCE_PENDING` when code cannot prove a physical or external environment result.
 
-## Stable layout
+## Available layout
+
+NOW is the minimum business record. This layout is not a required bundle: create only a useful, verified current-state file. Installation never requires empty index/system/validation/goal files.
 
 ```text
 NOW/

@@ -61,6 +61,9 @@ class DocumentCache:
         self.parsed = 0
         self.warnings: list[str] = []
         self.enabled = bool(session and session.cleanup_on_session_end and session.session_id)
+        if self.enabled and (os.name != "posix" or not hasattr(os, "O_NOFOLLOW")):
+            self.enabled = False
+            self.warnings.append("CACHE_UNAVAILABLE: private POSIX cache unsupported on this host")
         if self.enabled:
             try:
                 fd = self._open_root()

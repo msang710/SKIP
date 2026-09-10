@@ -1,0 +1,1152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skip.local/schemas/core-v1",
+  "title": "SKIP Core generation 1",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$"
+    },
+    "command": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "project.activate"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "name": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "request.submit"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "operation",
+                "text"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "operation": {},
+                "goal_id": {},
+                "text": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "record.propose_revision"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "expected_revision",
+                "fields",
+                "kind",
+                "request_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "request_id": {},
+                "id": {},
+                "fields": {},
+                "children": {},
+                "expected_revision": {},
+                "kind": {},
+                "goal_id": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "record.lifecycle"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "expected_revision",
+                "id",
+                "kind",
+                "lifecycle"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "lifecycle": {},
+                "expected_revision": {},
+                "id": {},
+                "kind": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "decision.select"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "decision_id",
+                "option_id",
+                "revision"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "decision_id": {},
+                "revision": {},
+                "option_id": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "risk.assess"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "change_factors",
+                "goal_factors",
+                "goal_id",
+                "paths",
+                "rationale"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "rationale": {},
+                "paths": {},
+                "change_factors": {},
+                "goal_id": {},
+                "goal_factors": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "execution.prepare"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "change_risk_id",
+                "goal_risk_id",
+                "revision",
+                "work_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "work_id": {},
+                "selection": {},
+                "change_risk_id": {},
+                "revision": {},
+                "goal_risk_id": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "execution.begin_current"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "change_risk_id",
+                "goal_risk_id",
+                "revision",
+                "work_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "change_risk_id": {},
+                "work_id": {},
+                "revision": {},
+                "goal_risk_id": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "execution.finish_current"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "execution_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "execution_id": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "execution.cancel"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "execution_id",
+                "expected_state_version"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "execution_id": {},
+                "expected_state_version": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "evidence.record"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "method",
+                "result",
+                "snapshot_id",
+                "summary",
+                "surface"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "result": {},
+                "method": {},
+                "criteria": {},
+                "summary": {},
+                "payload": {},
+                "snapshot_id": {},
+                "surface": {},
+                "execution_id": {},
+                "checks": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "fact.record"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "evidence_id",
+                "source_id",
+                "statement"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "supersedes_id": {},
+                "source_id": {},
+                "evidence_id": {},
+                "goal_id": {},
+                "statement": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "fact.retract"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "fact_id",
+                "reason"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "fact_id": {},
+                "reason": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "settings.update"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "body",
+                "expected_revision",
+                "scope"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "scope": {},
+                "expected_revision": {},
+                "body": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "observation.record"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "paths",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "goal_id": {},
+                "paths": {},
+                "summary": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        }
+      ]
+    },
+    "response": {
+      "type": "object",
+      "required": [
+        "schema",
+        "status",
+        "enforcement"
+      ],
+      "properties": {
+        "schema": {
+          "const": "skip-core/v1"
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "error"
+          ]
+        },
+        "enforcement": {
+          "const": "advisory"
+        },
+        "data": {
+          "type": "object"
+        },
+        "project_id": {
+          "$ref": "#/$defs/id"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "code": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "goal": {
+      "type": "object",
+      "required": [
+        "title",
+        "intent",
+        "success_definition"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "intent": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "success_definition": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "required": [
+        "question",
+        "rationale",
+        "risk_summary"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "risk_summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        }
+      }
+    },
+    "decision_options": {
+      "type": "object",
+      "required": [
+        "option_id",
+        "label",
+        "description",
+        "consequences",
+        "recommended",
+        "position"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "option_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "consequences": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "recommended": {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "position": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "required": [
+        "title",
+        "statement",
+        "rationale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        }
+      }
+    },
+    "requirement_criteria": {
+      "type": "object",
+      "required": [
+        "criterion_id",
+        "description",
+        "given_text",
+        "when_text",
+        "then_text",
+        "required"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "criterion_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "given_text": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "when_text": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "then_text": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "required": {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "requirement_decisions": {
+      "type": "object",
+      "required": [
+        "decision_id",
+        "decision_revision",
+        "rationale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "decision_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "decision_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 65536
+        }
+      }
+    },
+    "requirement_selections": {
+      "type": "object",
+      "required": [
+        "selection_id",
+        "rationale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "selection_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 65536
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "required": [
+        "title",
+        "design_body",
+        "scope_description",
+        "alternatives_body",
+        "rollback_body"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "design_body": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "scope_description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "alternatives_body": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "rollback_body": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        }
+      }
+    },
+    "plan_items": {
+      "type": "object",
+      "required": [
+        "item_id",
+        "title",
+        "design_body",
+        "verification_body",
+        "position"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "design_body": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "verification_body": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "position": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "plan_requirements": {
+      "type": "object",
+      "required": [
+        "requirement_id",
+        "requirement_revision",
+        "rationale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requirement_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "requirement_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 65536
+        }
+      }
+    },
+    "plan_decisions": {
+      "type": "object",
+      "required": [
+        "decision_id",
+        "decision_revision",
+        "rationale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "decision_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "decision_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 65536
+        }
+      }
+    },
+    "plan_selections": {
+      "type": "object",
+      "required": [
+        "selection_id",
+        "rationale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "selection_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 65536
+        }
+      }
+    },
+    "work_item": {
+      "type": "object",
+      "required": [
+        "operation",
+        "title",
+        "instruction_body",
+        "completion_definition",
+        "workflow_depth",
+        "request_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "instruction_body": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "completion_definition": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "workflow_depth": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        }
+      }
+    },
+    "work_item_checks": {
+      "type": "object",
+      "required": [
+        "check_id",
+        "description",
+        "surface",
+        "required"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "surface": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "required": {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "work_item_requirements": {
+      "type": "object",
+      "required": [
+        "requirement_id",
+        "requirement_revision",
+        "rationale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requirement_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "requirement_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 65536
+        }
+      }
+    },
+    "work_item_plan_items": {
+      "type": "object",
+      "required": [
+        "plan_id",
+        "plan_revision",
+        "plan_item_id",
+        "rationale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "plan_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "plan_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "plan_item_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 65536
+        }
+      }
+    },
+    "work_item_dependencies": {
+      "type": "object",
+      "required": [
+        "depends_on_id",
+        "depends_on_revision",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "depends_on_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "depends_on_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 65536
+        }
+      }
+    }
+  },
+  "$ref": "#/$defs/command"
+}

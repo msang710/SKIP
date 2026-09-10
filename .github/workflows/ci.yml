@@ -27,12 +27,25 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.14'
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '24'
+      - name: Build shared UI and install Core test dependencies
+        run: |
+          npm ci --prefix ui/mcp-app --ignore-scripts --no-audit --no-fund
+          npm run build --prefix ui/mcp-app
+          npm test --prefix ui/mcp-app
+          python -m pip install -r requirements/core.txt -r requirements/maintenance.txt
+      - name: Run SQLite Core and protocol tests
+        run: python -m unittest discover -s tests -t . -p 'test_*.py' -v
       - name: Run Python regression tests
         run: >-
           python -m unittest -v
           scripts.test_intent_context scripts.test_decision_runtime
           scripts.test_decision_runtime_store scripts.test_workflow_runtime
           scripts.test_context_session scripts.test_workflow_report
+          scripts.test_workflow_entry scripts.test_native_entry
+          scripts.test_codex_entry scripts.test_codex_package
 
   paseo:
     name: ${{ matrix.name }}
@@ -62,3 +75,40 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run check
         run: ${{ matrix.command }}
+
+  windows-core:
+    name: Windows bundled Core
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '24'
+      - name: Prepare locked dependencies and UI
+        run: |
+          npm ci --prefix ui/mcp-app --ignore-scripts --no-audit --no-fund
+          npm run build --prefix ui/mcp-app
+          python scripts/download_core_dependencies.py
+      - name: Build pinned Windows plugin with contract tests
+        run: python scripts/build_codex_package.py --output "$env:RUNNER_TEMP/skip-windows.zip" --with-tests
+      - name: Run the bundled interpreter without tools on PATH
+        shell: pwsh
+        run: |
+          Expand-Archive "$env:RUNNER_TEMP/skip-windows.zip" "$env:RUNNER_TEMP/skip-window-check"
+          $skipRoot = "$env:RUNNER_TEMP/skip-window-check/skip"
+          $skipPython = "$skipRoot/runtime/windows-x64/python.exe"
+          $savedSkipPath = $env:PATH
+          try {
+            $env:PATH = ""
+            Set-Location "$skipRoot/skills/skip"
+            & $skipPython -X utf8 -B -m unittest -v tests.core.test_application tests.core.test_relations tests.core.test_schema tests.core.test_contract tests.mcp.test_protocol
+            if ($LASTEXITCODE -ne 0) { throw "Bundled Core contract tests failed" }
+          } finally {
+            $env:PATH = $savedSkipPath
+          }

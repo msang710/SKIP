@@ -36,6 +36,8 @@ def read_object(path: Path) -> dict[str, Any]:
 
 
 def atomic_write(path: Path, value: dict[str, Any]) -> None:
+    if any((parent / "skip.db").is_file() for parent in path.absolute().parents):
+        raise StoreError("UNSUPPORTED_SCHEMA", "SQLite Core is active; the legacy file writer is retired")
     payload = canonical_bytes(value)
     if len(payload) > MAX_EVENT_BYTES:
         raise StoreError("INVALID_TRANSITION", "runtime record exceeds size limit")

@@ -11,12 +11,12 @@ import subprocess
 import time
 from typing import Any
 
-try:
+if not __package__:
     import intent_context as context
     from context_session import DocumentCache, SessionContext, fingerprint
     from decision_runtime import DecisionRuntime, DecisionRuntimeError
     from workflow_report import WorkflowError, strings
-except ModuleNotFoundError:
+else:
     from scripts import intent_context as context
     from scripts.context_session import DocumentCache, SessionContext, fingerprint
     from scripts.decision_runtime import DecisionRuntime, DecisionRuntimeError

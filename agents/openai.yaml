@@ -1,7 +1,7 @@
 interface:
   display_name: "SKIP"
   short_description: "제품 의도와 현재 코드 상태를 선별해 안전하게 구현"
-  default_prompt: "Use $skip --now to restore this project's current implementation state and effective rules, verify the relevant code, preserve approval and evidence boundaries, and prepare an approval-ready plan before changing code. Use the explicitly configured model language, or the user's current conversation language when the setting is default."
+  default_prompt: "Use $skip for my current request in this workspace. Keep my existing agent and IDE. Start with the actual request and current evidence, read useful current facts from the shared SQLite Core by default, and adapt investigation, decisions and checks to failure cost. Implement only within my authorized scope; preserve a plan-only request. Report the result, checks and remaining work in my conversation language."
 
 policy:
   allow_implicit_invocation: true

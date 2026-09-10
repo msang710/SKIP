@@ -1,7 +1,7 @@
 import { lstat, readFile, realpath, stat } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { homedir } from "node:os";
+import { homedir, platform } from "node:os";
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { PluginAttachmentItem } from "@getpaseo/plugin/server";
 
@@ -29,6 +29,7 @@ export type RecordSummary = {
   relativePath: string;
   title: string;
   status?: string;
+  verifiedAt?: string;
   created?: string;
   updated?: string;
   sourceRevision?: string;
@@ -41,18 +42,24 @@ export class IntentRecordError extends Error {
   }
 }
 
+function platformRoot(kind: "data" | "config"): string {
+  if (platform() === "win32") {
+    const key = kind === "data" ? "LOCALAPPDATA" : "APPDATA";
+    const value = process.env[key];
+    if (!value) throw new IntentRecordError("HOST_PATH_UNAVAILABLE", `${key} is unavailable`);
+    return value;
+  }
+  if (platform() === "darwin") return join(homedir(), "Library", "Application Support");
+  return kind === "data" ? process.env.XDG_DATA_HOME ?? join(homedir(), ".local", "share")
+    : process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config");
+}
+
 export function recordRoot(): string {
-  return resolve(
-    process.env.INTENT_TO_CODE_RECORD_ROOT ??
-      join(process.env.XDG_DATA_HOME ?? join(homedir(), ".local", "share"), "SKIP"),
-  );
+  return resolve(process.env.INTENT_TO_CODE_RECORD_ROOT ?? join(platformRoot("data"), "SKIP"));
 }
 
 function registryPath(): string {
-  return resolve(
-    process.env.INTENT_TO_CODE_WORKSPACE_REGISTRY ??
-      join(process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config"), "intent-to-code", "workspaces.yaml"),
-  );
+  return resolve(process.env.INTENT_TO_CODE_WORKSPACE_REGISTRY ?? join(platformRoot("config"), "intent-to-code", "workspaces.yaml"));
 }
 
 function assertSlug(value: string, label: string): string {
@@ -61,6 +68,11 @@ function assertSlug(value: string, label: string): string {
 }
 
 function parseScalarYaml(text: string): Record<string, string> {
+  if (text.trimStart().startsWith("{")) {
+    const value = JSON.parse(text);
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid project metadata");
+    return value;
+  }
   const result: Record<string, string> = {};
   for (const line of text.split(/\r?\n/)) {
     const match = line.match(/^([A-Za-z_][A-Za-z0-9_-]*):\s*(.*?)\s*$/);
@@ -71,6 +83,14 @@ function parseScalarYaml(text: string): Record<string, string> {
 
 export function parsePaseoBindings(text: string): Map<string, string> {
   const bindings = new Map<string, string>();
+  if (text.trimStart().startsWith("{")) {
+    const value = JSON.parse(text);
+    for (const [id, project] of Object.entries(value.bindings?.paseo ?? {})) {
+      if (typeof project !== "string" || !SLUG.test(project)) throw new Error("Invalid Paseo project binding");
+      bindings.set(id, project);
+    }
+    return bindings;
+  }
   const lines = text.split(/\r?\n/);
   let inBindings = false;
   let inPaseo = false;
@@ -151,7 +171,8 @@ async function summary(projectId: string, relativePath: string, size?: number): 
     status: meta.status,
     created: meta.created,
     updated: meta.updated,
-    sourceRevision: meta.source_revision,
+    sourceRevision: meta.verified_revision ?? meta.source_revision,
+    verifiedAt: meta.verified_at,
     byteLength: info.size,
   };
 }
@@ -286,4 +307,21 @@ export async function decisionInbox(projectId: string, goal: string) {
     if (error instanceof IntentRecordError) throw error;
     throw new IntentRecordError("CAPABILITY_UNAVAILABLE", "Decision Inbox runtime을 사용할 수 없습니다.");
   }
+}
+
+export async function readGroup(projectId: string, paths: string[]) {
+  if (!paths.length || paths.length > 24) throw new IntentRecordError("LIMIT", "한 번에 최대 24개 문서를 읽을 수 있습니다.");
+  const documents: Awaited<ReturnType<typeof readRecord>>[] = [];
+  const errors: { path: string; message: string }[] = [];
+  let group: string | undefined;
+  for (const path of [...new Set(paths)]) {
+    try {
+      const result = await readRecord(projectId, path);
+      const key = result.record.goal ?? "__project__";
+      if (group !== undefined && group !== key) throw new IntentRecordError("GROUP_MISMATCH", "다른 작업의 기록입니다.");
+      group = key;
+      documents.push(result);
+    } catch (error) { errors.push({ path, message: error instanceof Error ? error.message : "기록을 읽지 못했습니다." }); }
+  }
+  return { documents, errors };
 }

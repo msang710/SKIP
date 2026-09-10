@@ -22,6 +22,6 @@ export const intentInvocationSource = defineAttachmentSource({
   title: "SKIP",
   icon: "ListFilter",
   pickerTitle: "SKIP 호출 선택",
-  searchPlaceholder: "예: help · now verify · date:260825 · goal:feature-name",
+  searchPlaceholder: "예: 현재 상태 · 결정 · 새 요청",
   search: searchIntentInvocations,
 });

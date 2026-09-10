@@ -38,14 +38,17 @@ class Database:
             self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         require(create or self.path.is_file(), 'NOT_INITIALIZED', 'Connect SKIP to initialize the database')
         mode = 'rwc' if create else 'rw'
-        self.connection = sqlite3.connect(self.path.as_uri() + '?mode=' + mode, uri=True,
-                                          isolation_level=None, timeout=3)
-        self.connection.row_factory = sqlite3.Row
-        self.connection.execute('PRAGMA foreign_keys=ON')
-        self.connection.execute('PRAGMA busy_timeout=3000')
-        require(self.connection.execute('PRAGMA foreign_keys').fetchone()[0] == 1,
-                'UNSUPPORTED_SCHEMA', 'SQLite foreign keys are required')
         try:
+            self.connection = sqlite3.connect(self.path.as_uri() + '?mode=' + mode, uri=True,
+                                              isolation_level=None, timeout=3)
+        except sqlite3.Error as exc:
+            raise self.sqlite_error(exc) from exc
+        self.connection.row_factory = sqlite3.Row
+        try:
+            self.connection.execute('PRAGMA foreign_keys=ON')
+            self.connection.execute('PRAGMA busy_timeout=3000')
+            require(self.connection.execute('PRAGMA foreign_keys').fetchone()[0] == 1,
+                    'UNSUPPORTED_SCHEMA', 'SQLite foreign keys are required')
             if create:
                 self._migrate()
                 if os.name != 'nt':
@@ -55,8 +58,10 @@ class Database:
                 require(self.connection.execute('PRAGMA journal_mode=WAL').fetchone()[0] == 'wal',
                         'RECOVERY_REQUIRED', 'WAL unavailable')
             self.connection.execute('PRAGMA synchronous=FULL')
-        except BaseException:
+        except BaseException as exc:
             self.close()
+            if isinstance(exc, sqlite3.Error):
+                raise self.sqlite_error(exc) from exc
             raise
 
     @staticmethod
@@ -64,13 +69,38 @@ class Database:
         return [(int(p.name.split('_')[0]), p.read_text(), hashlib.sha256(p.read_bytes()).hexdigest())
                 for p in sorted(MIGRATIONS.glob('*.sql'))]
 
+    def diagnostics(self, actual=None):
+        from . import __version__
+        return {'core_version':__version__, 'core_root':str(Path(__file__).resolve().parent.parent),
+                'database_path':str(self.path), 'expected_schema_versions':[v for v, _, _ in self.migrations()],
+                'actual_schema_versions':actual}
+
+    def sqlite_error(self, exc):
+        name = getattr(exc, 'sqlite_errorname', 'SQLITE_ERROR')
+        primary = getattr(exc, 'sqlite_errorcode', 0) & 255
+        code, message = {
+            sqlite3.SQLITE_CANTOPEN:('DB_ACCESS_DENIED', 'Cannot open database or its WAL files; check access permissions'),
+            sqlite3.SQLITE_PERM:('DB_ACCESS_DENIED', 'Database permission denied'),
+            sqlite3.SQLITE_READONLY:('DB_READ_ONLY', 'Database operation requires write access'),
+            sqlite3.SQLITE_BUSY:('DB_BUSY', 'Database is busy; retry the same request key'),
+            sqlite3.SQLITE_LOCKED:('DB_BUSY', 'Database is locked; retry the same request key'),
+            sqlite3.SQLITE_CORRUPT:('DB_CORRUPT', 'SQLite reported database corruption; recovery is required'),
+            sqlite3.SQLITE_NOTADB:('DB_CORRUPT', 'The file is not a SQLite database'),
+        }.get(primary, ('DB_OPERATION_FAILED', 'Database operation could not complete'))
+        return CoreError(code, message, details={**self.diagnostics(), 'sqlite_errorname':name,
+            'sqlite_errorcode':getattr(exc, 'sqlite_errorcode', None), 'cause':str(exc)})
+
     def _check_schema(self):
         try:
             actual = {r['version']: r['checksum'] for r in self.connection.execute('SELECT * FROM schema_migrations')}
         except sqlite3.DatabaseError as e:
-            raise CoreError('UNSUPPORTED_SCHEMA', 'Database schema is unavailable') from e
+            if getattr(e, 'sqlite_errorcode', None) == sqlite3.SQLITE_ERROR and str(e) == 'no such table: schema_migrations':
+                raise CoreError('UNSUPPORTED_SCHEMA', 'Database has no SKIP schema metadata', details=self.diagnostics([])) from e
+            raise self.sqlite_error(e) from e
         expected = {v: h for v, _, h in self.migrations()}
-        require(actual == expected, 'UNSUPPORTED_SCHEMA', 'Schema version/checksum mismatch; use a compatible Core')
+        if actual != expected:
+            raise CoreError('UNSUPPORTED_SCHEMA', 'Schema version/checksum mismatch; use a compatible Core',
+                            details=self.diagnostics(sorted(actual)))
 
     def _migrate(self):
         with self.transaction():
@@ -99,9 +129,8 @@ class Database:
                 self.connection.execute('ROLLBACK')
             if isinstance(exc, sqlite3.IntegrityError):
                 raise CoreError('CONFLICT', 'Record constraint rejected the change: ' + str(exc)) from exc
-            if isinstance(exc, sqlite3.OperationalError):
-                code = 'CONFLICT' if 'locked' in str(exc).lower() else 'RECOVERY_REQUIRED'
-                raise CoreError(code, 'Database operation could not complete') from exc
+            if isinstance(exc, sqlite3.Error):
+                raise self.sqlite_error(exc) from exc
             raise
 
     def backup(self, target):

@@ -63,7 +63,7 @@ bin_root=Path.home()/'.local/bin';bin_root.mkdir(parents=True,exist_ok=True)
 for name,module in [('skip','skip_core.cli'),('skip-mcp','skip_mcp.server'),('skip-codex','adapters.codex.entry')]:
     path=bin_root/name
     assert not path.exists(),'Unexpected existing launcher: '+str(path)
-    text='#!/bin/sh\nSKIP_RELEASE='+shlex.quote(str(current))+'\nexport PYTHONPATH="$SKIP_RELEASE"\nexec "$SKIP_RELEASE/.venv/bin/python" -B -m '+module+' "$@"\n'
+    text='#!/bin/sh\nSKIP_RELEASE='+shlex.quote(str(current))+'\nexport PYTHONPATH="$SKIP_RELEASE"\nexec "$SKIP_RELEASE/.venv/bin/python" -P -B -m '+module+' "$@"\n'
     path.write_text(text);path.chmod(0o755)
 state.update(status='ACTIVATED_AWAITING_LIVE_CHECK',migration=report)
 (repo/'.build/deployment-state.json').write_text(json.dumps(state,ensure_ascii=False,indent=2)+'\n')

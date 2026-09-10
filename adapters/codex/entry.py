@@ -39,7 +39,7 @@ def run(workspace,session_root,thread_id,db_path,*,project_id=None,goal_id=None,
         require(latest['id']==latest_id,'CONTEXT_EXPIRED','The current user turn changed')
         return identity
     origin='codex-input-'+digest([thread_id,user['id']])
-    ctx=ExecutionContext(project,{'main':workspace},identity,verify,can_continue=True,context_id=origin)
+    ctx=ExecutionContext(project,{'main':workspace},identity,verify,can_continue=True,context_id=origin,caller_verified=True)
     # Stable per selected host user turn; process restarts do not invent a new request.
     principal=Principal(project,origin,kind='human',method='host_user_turn',
                         verifier='codex-local-session-record',event_key=user['id'],user_text=user['text'])

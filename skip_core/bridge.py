@@ -35,7 +35,7 @@ class NativeBridge:
             self.identity=tuple(p['identity'])
             require(len(self.identity)>=3 and all(isinstance(x,str) for x in self.identity) and all(self.identity[:3]),'INVALID_INPUT','Verified host identity required')
             self.context=ExecutionContext(p['project_id'],{k:Path(v).resolve(strict=True) for k,v in p['sources'].items()},
-                self.identity,lambda:self.identity,can_start=p.get('can_start') is True)
+                self.identity,lambda:self.identity,can_start=p.get('can_start') is True,caller_verified=True)
             return {'connected':True,'context_id':self.context.context_id,'capabilities':{'start_turn':self.context.can_start}}
         require(self.context is not None,'CONTEXT_EXPIRED','Connect the native host first')
         if operation=='disconnect':self.close();return {'connected':False}

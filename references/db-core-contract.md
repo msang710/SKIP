@@ -6,7 +6,7 @@ The Python application API owns all business state. SQLite is the sole runtime r
 
 Prefer connected MCP tools: `skip_status`, `skip_context`, `skip_decisions`, `skip_assess_risk`, `skip_propose`, `skip_observe`, `skip_record_result`, `skip_execution_status`.
 
-The module CLI is `python -m skip_core.cli --project <id> query <status|inbox|context|record|trace|execution.status|settings|risks> --input '<JSON>'`. `--workspace` supplies an explicitly connected source root. Commands come from stdin to `command`; this route is agent-only and cannot grant user authority. `activate`/`request` are actual interactive fallback entrypoints. Do not simulate their confirmation.
+Installed Linux uses `skip --workspace <root>` and `skip diagnose` through the active launcher. Do not select an old resolved release path from conversation history. For source development, the module CLI is `python -m skip_core.cli --project <id> query <status|inbox|context|record|trace|execution.status|settings|risks> --input '<JSON>'`. `--workspace` supplies an explicitly connected source root. Commands come from stdin to `command`; this route is agent-only and cannot grant user authority. `activate`/`request` are actual interactive fallback entrypoints. Do not simulate their confirmation.
 
 The Codex native module is `python -m adapters.codex.entry --workspace <root> [--project <id>] [--goal <id>]`. The adapter reads only the selected actual host session. On Windows the distributed `skip.cmd` uses the bundled interpreter. `--activate` accepts a current explicit SKIP invocation and creates project/source metadata only. Repeating an anchored request is idempotent. Host formats with no stable user-message identity fail closed.
 
@@ -62,3 +62,31 @@ criteria/links and unresolved references. Confirmed historical product decisions
 are retained as decisions; they do not create new selections or authorizations.
 Historical observations retain their reported results but their snapshots never
 satisfy a current-source gate. New native observations stay separate.
+
+## Caller, retries, and source connection renewal
+
+A verified caller, a transport connection, and execution authority are distinct.
+Codex agent CLI retries use host-verified conversation/workspace identity in a
+versioned, transport-specific receipt namespace. Native human receipts retain
+existing semantics. Old receipts are preserved; no ambiguous old caller IDs are
+reassigned. Different transports are not assumed to represent the same caller.
+Unknown CLI clients configure a stable `--receipt-scope` per client. This is an
+explicit retry namespace, never proof of human identity or permission. Without
+verified provenance or an explicit namespace, CLI mutations return CALLER_UNVERIFIED
+rather than silently losing deduplication. Reads remain available. MCP clients can
+also configure --receipt-scope for reconnect-safe retries; otherwise unknown hosts
+have connection-local receipts only. Host configuration owns this namespace, not
+individual model command payloads.
+
+Source-only MCP contexts revalidate the configured source and renew after expiry.
+They cannot acquire or extend native execution authority. Execution status exposes
+connection.state: current, revalidation_required, target_changed, or unverified.
+The compatibility connection_current flag describes a connection, not an agent.
+A different receipt connection never authorizes retransmission of an old execution.
+
+For installed Linux use the active `skip --workspace <root>` launcher, not an old
+runtime/releases path. `skip diagnose` reports Core version/root, DB path and schema
+compatibility. Packaged Windows entrypoints use their bundled runtime. Development
+module invocation remains a source checkout fallback. SQLite access, read-only,
+busy/locked, corruption, and actual schema mismatch errors remain distinct; queries
+never migrate or replace the DB in response to an error.

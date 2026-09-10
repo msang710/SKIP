@@ -17,9 +17,15 @@ def query_core(core, query, p, principal, context):
     }
     require(query in allowed and isinstance(p,dict) and set(p)<=allowed[query],'INVALID_INPUT','Invalid query')
     core.project,core.principal,core.context=principal.project_id,principal,context
+    connection_problem = None
     if context:
         require(context.project_id==principal.project_id,'PROJECT_MISMATCH','Context project mismatch')
-        context.check()
+        try:
+            context.check()
+        except CoreError as exc:
+            if query != 'execution.status' or exc.code not in ('STALE', 'CONTEXT_EXPIRED'):
+                raise
+            connection_problem = 'target_changed' if exc.code == 'STALE' else 'revalidation_required'
     project=core.c.execute('SELECT * FROM projects WHERE id=?',(core.project,)).fetchone()
     require(project is not None,'NOT_INITIALIZED','Connect this project first')
     sequence=core.c.execute('SELECT COALESCE(max(sequence),0) FROM events WHERE project_id=?',(core.project,)).fetchone()[0]
@@ -84,7 +90,12 @@ def query_core(core, query, p, principal, context):
         # No DB receipt digest becomes a route, token or reconstructed target.
         result['data']={k:x[k] for k in ('id','work_item_id','work_revision','state','state_version','started_at','finished_at')}
         result['data']['delivery']=dict(d)
-        result['data']['connection_current']=bool(context and x['dispatch_context_digest']==context.fingerprint)
+        current = bool(context and not connection_problem and x['dispatch_context_digest']==context.fingerprint)
+        state = connection_problem or ('current' if current else
+            'revalidation_required' if context and context.caller_verified else 'unverified')
+        result['data']['connection_current'] = current  # compatibility; not caller identity
+        result['data']['connection'] = {'state':state, 'execution_authority_restored':False}
+
         result['data']['validation_complete']=False
     elif query=='inbox':
         items=heads('decision',goal,limit+1,offset)

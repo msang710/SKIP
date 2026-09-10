@@ -41,6 +41,8 @@ class ExecutionContext:
     generation: int = 1
     expires_at: float = field(default_factory=lambda: time.monotonic() + 1800)
     revoked: bool = False
+    caller_verified: bool = False
+    renewable_source: bool = False
     _tickets: dict = field(default_factory=dict, repr=False)
 
     @property
@@ -54,6 +56,16 @@ class ExecutionContext:
         require(tuple(self.verify()) == self.identity, 'STALE', 'Current environment changed')
         if start:
             require(self.can_start, 'TARGET_UNAVAILABLE', 'This host cannot verify the current execution target')
+
+    def refresh_source(self):
+        # Renewal is for source-only connections, never native execution rights.
+        require(self.renewable_source and not self.can_start and not self.can_continue
+                and not self.revoked, 'CONTEXT_EXPIRED', 'Source connection cannot be renewed')
+        require(tuple(self.verify()) == self.identity, 'STALE', 'Current source changed')
+        if time.monotonic() >= self.expires_at:
+            self.generation += 1
+            self._tickets.clear()
+            self.expires_at = time.monotonic() + 1800
 
     def issue(self, payload):
         self.check()

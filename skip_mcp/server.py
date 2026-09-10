@@ -10,17 +10,35 @@ from skip_core.errors import CoreError,require
 from skip_core.service import Core
 
 
-def create_server(db_path,project_id,workspace=None):
-    principal=Principal(project_id,uid())
-    source_context=ExecutionContext(project_id,{'main':Path(workspace)},('mcp',),lambda:('mcp',)) if workspace else None
+def create_server(db_path,project_id,workspace=None,receipt_scope=None):
+    from adapters.common.caller import caller_scope
+    caller, verified = caller_scope(workspace, 'mcp', receipt_scope) if workspace else (uid(), False)
+    principal=Principal(project_id,caller)
+    root = Path(workspace).resolve(strict=True) if workspace else None
+    def observe_source():
+        value = root.stat()
+        return ('mcp', str(root.resolve(strict=True)), str(value.st_dev), str(value.st_ino))
+    identity = observe_source() if root else ()
+    source_context = ExecutionContext(project_id, {'main':root}, identity, observe_source,
+        caller_verified=verified, renewable_source=True) if root else None
+    def refresh():
+        if verified:
+            current, still_verified = caller_scope(workspace, 'mcp', receipt_scope)
+            require(still_verified and current == caller, 'CALLER_UNVERIFIED', 'Current host caller could not be revalidated')
+        if source_context:
+            try: source_context.refresh_source()
+            except OSError as exc:
+                raise CoreError('SOURCE_UNAVAILABLE', 'Configured source is unavailable') from exc
     # Open/close per operation: no daemon, no automatically created DB, no shared
     # SQLite connection across SDK thread/task boundaries.
     def query(name,p):
         try:
+            refresh()
             with Database(db_path) as db:return Core(db).query(name,p,principal,source_context)
         except CoreError as exc:return exc.result()
     def command(op,p,key):
         try:
+            refresh()
             with Database(db_path) as db:
                 return Core(db).execute({'schema':'skip-core/v1','project_id':project_id,'command':op,'key':key,'payload':p},principal,source_context)
         except CoreError as exc:return exc.result()
@@ -114,10 +132,11 @@ def create_server(db_path,project_id,workspace=None):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--db',type=Path,default=default_path());p.add_argument('--project')
+    p.add_argument('--receipt-scope',help='Client-owned retry namespace, not execution authority')
     p.add_argument('--workspace',type=Path,default=Path.cwd());a=p.parse_args()
     if a.project is None:
         from adapters.common.identity import resolve_project
         a.project=resolve_project(a.workspace,str(a.workspace),a.db)
-    create_server(a.db,a.project,a.workspace).run(transport='stdio')
+    create_server(a.db,a.project,a.workspace,a.receipt_scope).run(transport='stdio')
 
 if __name__=='__main__':main()

@@ -54,7 +54,7 @@ Decisions disappeared between conversations, repository investigations repeated 
 
 **SKIP is less a product that builds software for me than a way of working I have evolved so I can build larger software myself.** QuickHack is still the project where I have tested that way of working the longest, against the most real-world problems.
 
-![SKIP skill usage overview](docs/assets/skip-skills-used.svg)
+![SKIP skill usage overview](docs/assets/skip-skills-used.png)
 
 [Migrated goal records](examples/quickhack/records.md) · [Detailed case study](examples/quickhack/README.md) · [QuickHack repository](https://github.com/msang710/QuickHack_Public_Portfolio)
 

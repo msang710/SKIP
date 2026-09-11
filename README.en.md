@@ -46,21 +46,15 @@ SKIP includes a **shared SQLite Core, bounded context queries, MCP, and an optio
 
 **Enforcement is currently `advisory`.** No host write-interception adapter is bundled. Implementation approval is separate from deployment approval.
 
-## Built for real work: QuickHack
+## SKIP grew with QuickHack
 
-**SKIP's developer uses this workflow to build QuickHack, a device-level ERP/WMS for their own work.** QuickHack connects receiving, inspection, purchasing, inventory, sales-channel orders, shipping, and returns through PG and IMEI identifiers.
+SKIP was not originally planned as a product. I started building QuickHack, an ERP/WMS, to solve problems I encountered in logistics and inventory work, and as I grew the project with coding agents, **I kept changing the way I collaborated with them.**
 
-Its manual order-allocation workflow depends on domain judgments: a customer-requested device may differ from the original offer, a replacement must release the previous device and reserve the new one together, and packing already in progress takes priority over a manual change.
+Decisions disappeared between conversations, repository investigations repeated themselves, and discarded approaches came back. I borrowed ideas from other development tools and agents, then reshaped them around the problems I was actually running into. Today's SKIP grew naturally from that process: preserving decisions and evidence, retrieving only the context that matters, and separating human judgment from agent implementation.
 
-**[Read the migrated goal records](examples/quickhack/records.md)** — four published excerpts from the actual `manual-order-inventory-matching` goal have been migrated into the current SQLite Core: one goal, nine decisions, fifteen requirements, one plan, and three work items.
+**SKIP is less a product that builds software for me than a way of working I have evolved so I can build larger software myself.** QuickHack is still the project where I have tested that way of working the longest, against the most real-world problems.
 
-The business priority **“started downstream work > confirmed manual change > automatic matching”** in D-010 connects to R-011 and T-010A's lease and concurrency verification. The [case study](examples/quickhack/README.md) retains links to pinned implementation and test source.
-
-These are **historical development records migrated into the current structure**, not evidence that today's version was used at the time. `DB EVIDENCE PENDING` and `PARTIALLY VERIFIED` remain visible; seven references outside the excerpts remain unresolved. The public [case database](examples/quickhack/case.db) and [migration checks](examples/quickhack/migration.json) are included.
-
-**This is what “domain experts building tools for their own work” looks like:** the human defines business exceptions and priorities; the agent carries them into system behavior.
-
-[View the QuickHack repository on GitHub](https://github.com/msang710/QuickHack_Public_Portfolio)
+[Migrated goal records](examples/quickhack/records.md) · [Detailed case study](examples/quickhack/README.md) · [QuickHack repository](https://github.com/msang710/QuickHack_Public_Portfolio)
 
 ## Install
 

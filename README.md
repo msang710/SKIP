@@ -73,7 +73,7 @@ SKIP은 처음부터 제품으로 기획한 도구가 아닙니다. 나는 물�
 
 **SKIP은 나를 대신해 소프트웨어를 만드는 제품이라기보다, 내가 더 큰 소프트웨어를 만들기 위해 스스로 발전시켜온 협업 방식에 가깝습니다.** QuickHack은 지금도 그 방식을 가장 오래, 가장 실제적인 문제 위에서 시험하는 프로젝트입니다.
 
-![SKIP skill usage overview](docs/assets/skip-skills-used.svg)
+![SKIP skill usage overview](docs/assets/skip-skills-used.png)
 
 [이관된 목표 기록](examples/quickhack/records.md) · [상세 사례](examples/quickhack/README.md) · [QuickHack 저장소](https://github.com/msang710/QuickHack_Public_Portfolio)
 

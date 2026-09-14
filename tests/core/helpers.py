@@ -26,7 +26,15 @@ class Fixture:
 
     def request(self):
         r=self.call('request.submit',{'text':'Actual request','operation':'implement'},True)
-        self.request_id=r['request_id'];self.goal=r['goal']['id']; return r
+        self.request_id=r['request_id'];self.goal=r['goal']['id']
+        # This fixture models a native UI implementation request. Resolve its
+        # deliberately generic text before testing unrelated execution gates.
+        from skip_core.input_contract import classify,normalize
+        body={k:v for k,v in classify(normalize('Actual request','project')).items() if k in ('acts','constraints','targets','evidence_spans','unresolved')}
+        body.update(acts=['implement'],unresolved=[])
+        if self.db.connection.execute("SELECT 1 FROM sqlite_master WHERE name='input_envelopes'").fetchone():
+            self.call('intent.propose',{'request_id':self.request_id,'expected_revision':1,'body':body})
+        return r
 
     def publish(self,kind,fields,children=None,**kw):
         return self.call('record.propose_revision',dict(kind=kind,expected_revision=0,request_id=self.request_id,

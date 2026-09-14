@@ -1,0 +1,26 @@
+/** Official compiler check. PASEO_SERVER_ROOT points to an isolated @getpaseo/server 0.8 installation. */
+import {createRequire} from 'node:module';
+import {pathToFileURL} from 'node:url';
+import path from 'node:path';
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const root=path.resolve('plugins/paseo');
+const serverRoot=process.env.PASEO_SERVER_ROOT;
+assert(serverRoot,'Set PASEO_SERVER_ROOT to the isolated 0.8 server package');
+const pkg=JSON.parse(fs.readFileSync(path.join(serverRoot,'package.json'),'utf8'));
+assert.equal(pkg.version,'0.8.0');
+const {compilePlugin}=await import(pathToFileURL(path.join(serverRoot,'dist/server/server/plugins/compiler.js')));
+const result=await compilePlugin({client:path.join(root,'index.client.tsx'),server:path.join(root,'index.server.ts')});
+const require=createRequire(path.join(root,'package.json'));
+const handlers=new Map();
+const server=(0,eval)(result.serverBundle)(require);
+const dispose=server.default({handle(contract,fn){assert(!handlers.has(contract.name));handlers.set(contract.name,fn);}});
+assert.equal(handlers.size,5);
+assert.throws(()=>handlers.get('skip.core.close')({sessionId:'missing',uiInstanceId:'ui',workspaceId:'w'}),{code:'CONTEXT_EXPIRED'});
+dispose();dispose();
+const panels=[],sources=[],commands=[];
+const client=(0,eval)(result.clientBundle)(name=>name==='react-native'||name==='@getpaseo/plugin/client'?{}:require(name));
+const cleanup=client.default({addAttachmentSource:s=>sources.push(s),addWorkspacePanel:p=>panels.push(p),addCommandCenterItem:c=>commands.push(c)});
+assert.deepEqual(panels.map(p=>p.context),['workspace','agent']);assert.equal(sources.length,1);assert.equal(commands.length,2);
+cleanup();cleanup();
+console.log(JSON.stringify({paseo:pkg.version,clientBytes:result.clientBundle.length,serverBytes:result.serverBundle.length,rpcHandlers:handlers.size,panels:panels.length,attachmentSources:sources.length,cleanup:'idempotent'}));

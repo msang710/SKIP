@@ -18,6 +18,35 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
                 await client.initialize()
                 tools=await client.list_tools();names={t.name for t in tools.tools}
                 self.assertIn('skip_status',names)
+                self.assertIn('skip_enter',names)
+                from skip_core.input_contract import classify,normalize
+                words='이 내용으로 새 목표 생성해'
+                native=self.f.actor(True,words)
+                captured=self.f.core.execute(self.f.command('input.ingest',{}),native,self.f.ctx)['data']
+                input_read=await client.call_tool('skip_entry',{'input_id':captured['input_id']})
+                entry=input_read.structuredContent or json.loads(input_read.content[0].text)
+                self.assertEqual(entry['data']['suggestion']['acts'],['unresolved'])
+                body={k:v for k,v in classify(normalize(words,'project')).items() if k in ('acts','constraints','targets','evidence_spans','unresolved')}
+                body.update(acts=['create_goal'],unresolved=[])
+                entry_args={'input_id':captured['input_id'],'input_digest':captured['digest'],'expected_revision':0,'body':body,'target':{'mode':'create','fields':{'title':'MCP goal','intent':words,'success_definition':'Stored'}},'records':[],'submission_id':'mcp-entry'}
+                entered=await client.call_tool('skip_enter',entry_args)
+                entered_value=entered.structuredContent or json.loads(entered.content[0].text)
+                self.assertEqual(entered_value['status'],'ok',entered_value)
+                self.assertEqual(entered_value['data']['authority'],'records_only')
+                again=await client.call_tool('skip_enter',entry_args)
+                self.assertEqual(again.structuredContent or json.loads(again.content[0].text),entered_value)
+
+                self.assertIn('skip_project_profile',names)
+                self.assertIn('skip_propose_project_profile',names)
+                profile=await client.call_tool('skip_project_profile',{})
+                v=profile.structuredContent or json.loads(profile.content[0].text)
+                self.assertFalse(v['data']['metadata']['available'])
+                proposed=await client.call_tool('skip_propose_project_profile',{'expected_revision':None,'tagline':'Project','body_markdown':'Purpose','key':'profile-propose'})
+                v=proposed.structuredContent or json.loads(proposed.content[0].text)
+                self.assertEqual(v['data']['state'],'proposed')
+                profile=await client.call_tool('skip_project_profile',{})
+                v=profile.structuredContent or json.loads(profile.content[0].text)
+                self.assertIsNone(v['data']['profile'])
                 from tests.core.test_authoring import AuthoringTests
                 self.assertTrue({'skip_submit','skip_amend','skip_result'}<=names)
                 schema=next(t.inputSchema for t in tools.tools if t.name=='skip_submit')

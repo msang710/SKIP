@@ -117,13 +117,13 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "fields": {},
                 "expected_revision": {},
-                "kind": {},
-                "id": {},
                 "goal_id": {},
-                "children": {},
-                "request_id": {}
+                "kind": {},
+                "request_id": {},
+                "id": {},
+                "fields": {},
+                "children": {}
               }
             }
           },
@@ -162,10 +162,10 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "id": {},
-                "lifecycle": {},
+                "expected_revision": {},
                 "kind": {},
-                "expected_revision": {}
+                "id": {},
+                "lifecycle": {}
               }
             }
           },
@@ -245,11 +245,11 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "paths": {},
                 "change_factors": {},
-                "rationale": {},
                 "goal_id": {},
-                "goal_factors": {}
+                "rationale": {},
+                "goal_factors": {},
+                "paths": {}
               }
             }
           },
@@ -289,10 +289,10 @@
               "additionalProperties": false,
               "properties": {
                 "change_risk_id": {},
-                "goal_risk_id": {},
-                "work_id": {},
                 "selection": {},
-                "revision": {}
+                "revision": {},
+                "work_id": {},
+                "goal_risk_id": {}
               }
             }
           },
@@ -331,8 +331,8 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "goal_risk_id": {},
                 "work_id": {},
+                "goal_risk_id": {},
                 "change_risk_id": {},
                 "revision": {}
               }
@@ -448,16 +448,16 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "surface": {},
-                "snapshot_id": {},
-                "summary": {},
-                "checks": {},
-                "execution_id": {},
-                "payload": {},
-                "result": {},
-                "criteria": {},
                 "method": {},
-                "purpose": {}
+                "snapshot_id": {},
+                "purpose": {},
+                "execution_id": {},
+                "criteria": {},
+                "summary": {},
+                "payload": {},
+                "checks": {},
+                "result": {},
+                "surface": {}
               }
             }
           },
@@ -495,11 +495,11 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "statement": {},
-                "supersedes_id": {},
+                "goal_id": {},
                 "evidence_id": {},
+                "statement": {},
                 "source_id": {},
-                "goal_id": {}
+                "supersedes_id": {}
               }
             }
           },
@@ -536,8 +536,8 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "fact_id": {},
-                "reason": {}
+                "reason": {},
+                "fact_id": {}
               }
             }
           },
@@ -576,8 +576,8 @@
               "additionalProperties": false,
               "properties": {
                 "scope": {},
-                "body": {},
-                "expected_revision": {}
+                "expected_revision": {},
+                "body": {}
               }
             }
           },
@@ -614,8 +614,8 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "summary": {},
                 "paths": {},
+                "summary": {},
                 "goal_id": {}
               }
             }
@@ -655,12 +655,12 @@
               "additionalProperties": false,
               "properties": {
                 "snapshot_id": {},
-                "id": {},
                 "goal_id": {},
-                "expected_revision": {},
-                "links": {},
-                "kind": {},
                 "body": {},
+                "expected_revision": {},
+                "kind": {},
+                "id": {},
+                "links": {},
                 "evidence": {}
               }
             }
@@ -700,9 +700,9 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "id": {},
                 "selection_id": {},
                 "kind": {},
+                "id": {},
                 "revision": {}
               }
             }
@@ -740,11 +740,11 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "case_id": {},
+                "expected": {},
                 "conditions": {},
                 "evidence_id": {},
-                "expected": {},
-                "classification": {}
+                "classification": {},
+                "case_id": {}
               }
             }
           },
@@ -827,15 +827,15 @@
               ],
               "additionalProperties": false,
               "properties": {
+                "snapshot_id": {},
                 "applicability": {},
-                "guideline_id": {},
                 "goal_id": {},
-                "revision": {},
                 "evidence_id": {},
-                "outcome": {},
-                "rationale": {},
                 "work_id": {},
-                "snapshot_id": {}
+                "rationale": {},
+                "revision": {},
+                "outcome": {},
+                "guideline_id": {}
               }
             }
           },
@@ -875,12 +875,12 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "execution_id": {},
-                "environment_evidence_id": {},
                 "snapshot_id": {},
-                "scenario_id": {},
                 "environment": {},
-                "revision": {}
+                "revision": {},
+                "execution_id": {},
+                "scenario_id": {},
+                "environment_evidence_id": {}
               }
             }
           },
@@ -921,12 +921,12 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "recovery": {},
+                "behavior": {},
                 "trace": {},
-                "injection": {},
                 "evidence_id": {},
                 "run_id": {},
-                "behavior": {}
+                "recovery": {},
+                "injection": {}
               }
             }
           },
@@ -966,11 +966,11 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "obligation_id": {},
-                "rationale": {},
-                "selection_id": {},
                 "snapshot_id": {},
-                "revision": {}
+                "rationale": {},
+                "revision": {},
+                "selection_id": {},
+                "obligation_id": {}
               }
             }
           },
@@ -1010,11 +1010,11 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "work_revision": {},
-                "obligation_id": {},
                 "check_id": {},
+                "revision": {},
                 "work_id": {},
-                "revision": {}
+                "work_revision": {},
+                "obligation_id": {}
               }
             }
           },
@@ -1117,14 +1117,15 @@
               "type": "object",
               "required": [
                 "body",
-                "expected_revision",
-                "request_id"
+                "expected_revision"
               ],
               "additionalProperties": false,
               "properties": {
                 "expected_revision": {},
+                "input_digest": {},
+                "request_id": {},
                 "body": {},
-                "request_id": {}
+                "input_id": {}
               }
             }
           },
@@ -1161,9 +1162,9 @@
               ],
               "additionalProperties": false,
               "properties": {
-                "id": {},
-                "expected_revision": {},
                 "body": {},
+                "expected_revision": {},
+                "id": {},
                 "request_id": {}
               }
             }
@@ -1204,6 +1205,301 @@
                 "proposal_id": {},
                 "revision": {}
               }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "entry.submit"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "properties": {
+                "input_id": {
+                  "title": "Input Id",
+                  "type": "string"
+                },
+                "input_digest": {
+                  "title": "Input Digest",
+                  "type": "string"
+                },
+                "expected_revision": {
+                  "title": "Expected Revision",
+                  "type": "integer"
+                },
+                "body": {
+                  "$ref": "#/$defs/IntentBody"
+                },
+                "target": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/CreateTarget"
+                    },
+                    {
+                      "$ref": "#/$defs/ExistingTarget"
+                    },
+                    {
+                      "$ref": "#/$defs/NoTarget"
+                    }
+                  ],
+                  "title": "Target"
+                },
+                "records": {
+                  "items": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/decisionSubmission"
+                      },
+                      {
+                        "$ref": "#/$defs/requirementSubmission"
+                      },
+                      {
+                        "$ref": "#/$defs/planSubmission"
+                      },
+                      {
+                        "$ref": "#/$defs/work_itemSubmission"
+                      }
+                    ]
+                  },
+                  "title": "Records",
+                  "type": "array"
+                }
+              },
+              "required": [
+                "input_id",
+                "input_digest",
+                "expected_revision",
+                "body",
+                "target",
+                "records"
+              ],
+              "title": "EntrySubmission",
+              "type": "object"
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "goal.transition"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "properties": {
+                "input_id": {
+                  "title": "Input Id",
+                  "type": "string"
+                },
+                "input_digest": {
+                  "title": "Input Digest",
+                  "type": "string"
+                },
+                "evidence_spans": {
+                  "items": {
+                    "$ref": "#/$defs/Span"
+                  },
+                  "title": "Evidence Spans",
+                  "type": "array"
+                },
+                "changes": {
+                  "items": {
+                    "$ref": "#/$defs/GoalChange"
+                  },
+                  "title": "Changes",
+                  "type": "array"
+                }
+              },
+              "required": [
+                "input_id",
+                "input_digest",
+                "evidence_spans",
+                "changes"
+              ],
+              "title": "GoalTransition",
+              "type": "object"
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "goal.set_state"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "from_state",
+                "id",
+                "revision",
+                "state_version",
+                "to_state"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "state_version": {},
+                "id": {},
+                "revision": {},
+                "from_state": {},
+                "to_state": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "record.set_state"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "goal",
+                    "decision",
+                    "requirement",
+                    "plan",
+                    "work_item"
+                  ],
+                  "title": "Kind",
+                  "type": "string"
+                },
+                "id": {
+                  "title": "Id",
+                  "type": "string"
+                },
+                "revision": {
+                  "title": "Revision",
+                  "type": "integer"
+                },
+                "state_version": {
+                  "title": "State Version",
+                  "type": "integer"
+                },
+                "from_state": {
+                  "enum": [
+                    "active",
+                    "held",
+                    "completed",
+                    "rejected",
+                    "superseded",
+                    "archived"
+                  ],
+                  "title": "From State",
+                  "type": "string"
+                },
+                "to_state": {
+                  "enum": [
+                    "active",
+                    "held",
+                    "completed",
+                    "rejected",
+                    "superseded",
+                    "archived"
+                  ],
+                  "title": "To State",
+                  "type": "string"
+                },
+                "reason": {
+                  "title": "Reason",
+                  "type": "string"
+                },
+                "replacement": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/RecordReplacement"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "id",
+                "revision",
+                "state_version",
+                "from_state",
+                "to_state"
+              ],
+              "title": "RecordStateSubmission",
+              "type": "object"
             }
           },
           "description": "Verified native user action required"
@@ -1372,6 +1668,166 @@
             }
           },
           "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "project.profile.propose"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "body_markdown",
+                "expected_revision",
+                "tagline"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "body_markdown": {},
+                "expected_revision": {},
+                "tagline": {}
+              }
+            }
+          },
+          "description": "Agent command; no human authority"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "project.profile.save"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "body_markdown",
+                "expected_revision",
+                "tagline"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "body_markdown": {},
+                "expected_revision": {},
+                "tagline": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "project.profile.accept"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "digest",
+                "expected_revision",
+                "revision"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "expected_revision": {},
+                "digest": {},
+                "revision": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "command",
+            "key",
+            "project_id",
+            "payload"
+          ],
+          "properties": {
+            "schema": {
+              "const": "skip-core/v1"
+            },
+            "command": {
+              "const": "project.profile.reject"
+            },
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "project_id": {
+              "$ref": "#/$defs/id"
+            },
+            "payload": {
+              "type": "object",
+              "required": [
+                "digest",
+                "expected_revision",
+                "revision"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "expected_revision": {},
+                "digest": {},
+                "revision": {}
+              }
+            }
+          },
+          "description": "Verified native user action required"
         }
       ]
     },
@@ -1899,23 +2355,206 @@
         }
       }
     },
-    "AuthoringBase": {
-      "additionalProperties": false,
+    "CreateTarget": {
       "properties": {
+        "mode": {
+          "const": "create",
+          "title": "Mode",
+          "type": "string"
+        },
+        "fields": {
+          "$ref": "#/$defs/GoalFields"
+        }
+      },
+      "required": [
+        "mode",
+        "fields"
+      ],
+      "title": "CreateTarget",
+      "type": "object"
+    },
+    "ExistingTarget": {
+      "properties": {
+        "mode": {
+          "const": "existing",
+          "title": "Mode",
+          "type": "string"
+        },
         "goal_id": {
           "title": "Goal Id",
           "type": "string"
         },
-        "request_id": {
-          "title": "Request Id",
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "mode",
+        "goal_id",
+        "revision"
+      ],
+      "title": "ExistingTarget",
+      "type": "object"
+    },
+    "GoalFields": {
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "intent": {
+          "title": "Intent",
+          "type": "string"
+        },
+        "success_definition": {
+          "title": "Success Definition",
           "type": "string"
         }
       },
       "required": [
-        "goal_id",
-        "request_id"
+        "title",
+        "intent",
+        "success_definition"
       ],
-      "title": "AuthoringBase",
+      "title": "GoalFields",
+      "type": "object"
+    },
+    "IntentBody": {
+      "properties": {
+        "acts": {
+          "items": {
+            "enum": [
+              "answer",
+              "investigate",
+              "decide",
+              "requirements",
+              "design",
+              "tasks",
+              "implement",
+              "validate",
+              "deploy",
+              "resume",
+              "cancel",
+              "create_goal",
+              "record",
+              "unresolved"
+            ],
+            "type": "string"
+          },
+          "title": "Acts",
+          "type": "array"
+        },
+        "constraints": {
+          "items": {
+            "enum": [
+              "implement",
+              "deploy",
+              "design_change"
+            ],
+            "type": "string"
+          },
+          "title": "Constraints",
+          "type": "array"
+        },
+        "targets": {
+          "items": {
+            "$ref": "#/$defs/TargetRef"
+          },
+          "title": "Targets",
+          "type": "array"
+        },
+        "evidence_spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "title": "Evidence Spans",
+          "type": "array"
+        },
+        "unresolved": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Unresolved",
+          "type": "array"
+        }
+      },
+      "required": [
+        "acts",
+        "constraints",
+        "targets",
+        "evidence_spans",
+        "unresolved"
+      ],
+      "title": "IntentBody",
+      "type": "object"
+    },
+    "NoTarget": {
+      "properties": {
+        "mode": {
+          "const": "none",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "NoTarget",
+      "type": "object"
+    },
+    "Span": {
+      "properties": {
+        "part_id": {
+          "title": "Part Id",
+          "type": "string"
+        },
+        "start": {
+          "title": "Start",
+          "type": "integer"
+        },
+        "end": {
+          "title": "End",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "part_id",
+        "start",
+        "end"
+      ],
+      "title": "Span",
+      "type": "object"
+    },
+    "TargetRef": {
+      "properties": {
+        "kind": {
+          "enum": [
+            "goal",
+            "decision",
+            "requirement",
+            "plan",
+            "work_item",
+            "evidence"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "TargetRef",
       "type": "object"
     },
     "decisionChildren": {
@@ -2568,6 +3207,113 @@
         "rationale"
       ],
       "title": "work_itemrequirementsItem",
+      "type": "object"
+    },
+    "GoalChange": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "state_version": {
+          "title": "State Version",
+          "type": "integer"
+        },
+        "from_state": {
+          "enum": [
+            "active",
+            "held",
+            "completed",
+            "archived"
+          ],
+          "title": "From State",
+          "type": "string"
+        },
+        "to_state": {
+          "enum": [
+            "active",
+            "held",
+            "completed",
+            "archived"
+          ],
+          "title": "To State",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/TargetRef"
+          },
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "state_version",
+        "from_state",
+        "to_state",
+        "reason",
+        "evidence"
+      ],
+      "title": "GoalChange",
+      "type": "object"
+    },
+    "RecordReplacement": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "decision",
+            "requirement",
+            "plan",
+            "work_item"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "RecordReplacement",
+      "type": "object"
+    },
+    "AuthoringBase": {
+      "additionalProperties": false,
+      "properties": {
+        "goal_id": {
+          "title": "Goal Id",
+          "type": "string"
+        },
+        "request_id": {
+          "title": "Request Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "goal_id",
+        "request_id"
+      ],
+      "title": "AuthoringBase",
       "type": "object"
     },
     "Amendment": {

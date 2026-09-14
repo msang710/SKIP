@@ -113,3 +113,45 @@ class AuthoringTests(unittest.TestCase):
   r=self.call('submit',records=[p])
   self.assertTrue(r['committed']);self.assertFalse(r['complete'])
   self.assertIn('digest',r['records'][0]);self.assertNotIn('fields',r['records'][0])
+
+ def full_bundle(self):
+  requirement={'client_ref':'r','kind':'requirement','fields':{'title':'Requirement','statement':'One change','rationale':'No duplicates'},'children':{'criteria':[{'description':'Once','given_text':'Same command','when_text':'Retry','then_text':'One change','required':1}]}}
+  link={'requirement_id':'$r','rationale':'Required behavior'}
+  plan=self.plan();plan['children']['requirements']=[dict(link)]
+  work={'client_ref':'w','kind':'work_item','fields':{'title':'Work','operation':'implement','instruction_body':'Change','completion_definition':'Tests pass','workflow_depth':'full'},'children':{'requirements':[dict(link)],'plan_items':[{'plan_id':'$p','plan_item_id':'step','rationale':'Design'}],'checks':[{'description':'Verify','surface':'unit','required':1}]}}
+  return [requirement,plan,work]
+ def test_full_missing_links_are_explicit_and_bundle_rolls_back(self):
+  for missing in (('requirements',),('plan_items',),('requirements','plan_items')):
+   with self.subTest(missing=missing):
+    rows=self.full_bundle()
+    for group in missing:rows[-1]['children'].pop(group)
+    before={t:self.f.db.connection.execute('SELECT count(*) FROM '+t).fetchone()[0] for t in ('requirements','plans','work_items')}
+    with self.assertRaises(CoreError) as error:self.call('submit',records=rows)
+    self.assertEqual(error.exception.code,'INVALID_INPUT')
+    self.assertEqual(error.exception.details['input_path'],'records[2]')
+    self.assertCountEqual(error.exception.details['missing_fields'],['children.'+g for g in missing])
+    for t,count in before.items():self.assertEqual(self.f.db.connection.execute('SELECT count(*) FROM '+t).fetchone()[0],count)
+ def test_full_bundle_links_and_amend_cannot_remove_required_link(self):
+  result=self.call('submit',records=self.full_bundle())
+  self.assertTrue(result['committed']);self.assertTrue(result['complete'])
+  requirement,plan,work=result['records']
+  self.assertEqual(work['children']['requirements'][0]['requirement_id'],requirement['id'])
+  self.assertEqual(work['children']['plan_items'][0]['plan_id'],plan['id'])
+  target={k:work[k] for k in ('kind','id','revision')}
+  with self.assertRaises(CoreError) as error:
+   self.call('amend',changes=[{'target':target,'remove_items':{'requirements':[{'requirement_id':requirement['id']}]}}])
+  self.assertEqual(error.exception.details['input_path'],'changes[0]')
+  self.assertEqual(error.exception.details['missing_fields'],['children.requirements'])
+  current=self.f.core.query('record',target,self.f.actor())['data']
+  self.assertEqual(current['current_revision'],1)
+  self.assertEqual(current['children'],work['children'])
+
+ def test_cantopen_diagnostic_preserves_code_and_does_not_assert_permissions(self):
+  import sqlite3
+  error=sqlite3.OperationalError('unable to open database file')
+  error.sqlite_errorcode=sqlite3.SQLITE_CANTOPEN
+  error.sqlite_errorname='SQLITE_CANTOPEN'
+  result=self.f.db.sqlite_error(error)
+  self.assertEqual(result.code,'DB_ACCESS_DENIED')
+  self.assertEqual(result.details['sqlite_errorcode'],14)
+  self.assertIn('path',str(result));self.assertIn('sandbox',str(result))

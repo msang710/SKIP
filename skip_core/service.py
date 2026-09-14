@@ -30,9 +30,19 @@ from .learning_runtime import OPS as LEARNING_OPS, HANDLERS as LEARNING_HANDLERS
 OPERATIONS.update(LEARNING_OPS)
 from .entry_runtime import OPS as ENTRY_OPS, HANDLERS as ENTRY_HANDLERS
 OPERATIONS.update(ENTRY_OPS)
+from .input_authoring import OPS as INPUT_OPS, HANDLERS as INPUT_HANDLERS
+OPERATIONS.update(INPUT_OPS)
+from .goal_transition import OPS as GOAL_OPS, HANDLERS as GOAL_HANDLERS
+OPERATIONS.update(GOAL_OPS)
+from .record_state import OPS as STATE_OPS, HANDLERS as STATE_HANDLERS
+OPERATIONS.update(STATE_OPS)
+GOAL_HANDLERS = {**GOAL_HANDLERS, **STATE_HANDLERS}
 from .authoring import OPS as AUTHORING_OPS, HANDLERS as AUTHORING_HANDLERS
 OPERATIONS.update(AUTHORING_OPS)
 
+
+from .project_profile import OPS as PROFILE_OPS, HANDLERS as PROFILE_HANDLERS
+OPERATIONS.update(PROFILE_OPS)
 
 class Core:
     def __init__(self, db):
@@ -41,7 +51,7 @@ class Core:
 
     def query(self, query, payload, principal, context=None):
         from .queries import query_core
-        with self.db.transaction(write=False):
+        with self.db.transaction(write=query in ('context','status','project.profile')):
             return query_core(self, query, payload, principal, context)
 
     def execute(self, command, principal, context=None):
@@ -79,9 +89,15 @@ class Core:
                 require(exists and exists['state']=='active', 'NOT_INITIALIZED', 'Connect this project first')
             self.interaction = self._interaction(principal, command)
             self.event = self.event_record(op)
-            if op in AUTHORING_HANDLERS:
+            if op in PROFILE_HANDLERS:
+                data = PROFILE_HANDLERS[op](self,payload)
+            elif op in AUTHORING_HANDLERS:
                 data = AUTHORING_HANDLERS[op](self,payload)
                 data['submission_id']=key
+            elif op in GOAL_HANDLERS:
+                data = GOAL_HANDLERS[op](self,payload)
+            elif op in INPUT_HANDLERS:
+                data = INPUT_HANDLERS[op](self,payload)
             elif op in ENTRY_HANDLERS:
                 data = ENTRY_HANDLERS[op](self,payload)
             elif op in LEARNING_HANDLERS:
@@ -180,10 +196,9 @@ class Core:
     def _record_lifecycle(self, p):
         record = records.get(self.c,self.project,p['kind'],p['id'])
         require(record['revision']==p['expected_revision'],'STALE','Record changed')
-        require(p['lifecycle'] in ('active','held','archived'),'INVALID_INPUT','Invalid lifecycle')
-        self.c.execute(f'UPDATE {p["kind"]}s SET lifecycle=?,state_version=state_version+1,last_event_id=? WHERE project_id=? AND id=?',
-                       (p['lifecycle'],self.event,self.project,p['id']))
-        return {'id':p['id'],'lifecycle':p['lifecycle']}
+        require(p['lifecycle'] in (('active','held','completed','archived') if p['kind']=='goal' else ('active','held','archived')),'INVALID_INPUT','Invalid lifecycle')
+        from .record_state import apply
+        return apply(self,p['kind'],p['id'],p['expected_revision'],p['lifecycle'])
 
     def _decision_select(self, p):
         decision = records.get(self.c,self.project,'decision',p['decision_id'])
@@ -205,7 +220,8 @@ class Core:
             'ORDER BY s.id',(self.project,'installation'))]
 
     def policy_digest(self):
-        return digest({'version':'failure-cost/2','settings':self.current_settings()})
+        from .policy import DEFAULT_RULES
+        return digest({'version':'failure-cost/3','defaults':DEFAULT_RULES,'settings':self.current_settings()})
 
     def source_scope(self, paths, goal=None):
         require(self.context is not None,'CONTEXT_EXPIRED','A current source connection is required')
@@ -294,13 +310,14 @@ class Core:
         return self._evidence_record({'snapshot_id':snap,'surface':'source','result':'PASS','summary':p['summary'],'method':'current source snapshot'})
 
     def _settings_update(self,p):
+        from .policy import DEFAULT_RULES
         scope=p['scope']
         require(scope in ('project','installation'),'INVALID_INPUT','Invalid settings scope')
         require(scope!='installation' or self.principal.installation_admin,'USER_ACTION_REQUIRED','Installation settings require a local administrator action')
         body=p['body']
         require(isinstance(body,dict) and set(body)=={'disabled_default_rule_ids','custom_rules'},'INVALID_INPUT','Invalid settings body')
-        require(isinstance(body['disabled_default_rule_ids'],list) and len(body['disabled_default_rule_ids'])<=10 and
-                all(v in {f'C-{i:03}' for i in range(1,11)} for v in body['disabled_default_rule_ids']), 'INVALID_INPUT','Unknown default rule')
+        require(isinstance(body['disabled_default_rule_ids'],list) and len(body['disabled_default_rule_ids'])<=len(DEFAULT_RULES) and
+                all(v in DEFAULT_RULES for v in body['disabled_default_rule_ids']), 'INVALID_INPUT','Unknown default rule')
         require(isinstance(body['custom_rules'],list) and len(body['custom_rules'])<=128,'INVALID_INPUT','Too many rules')
         seen=set()
         for rule in body['custom_rules']:

@@ -11,8 +11,9 @@ def settled(record):
     o=record.get('origin')
     return bool(o and o['source_status'].strip().lower() in ('confirmed','approved','accepted','확정','승인'))
 
-def listing(core,goal,kind,limit,offset,search=None):
+def listing(core,goal,kind,limit,offset,search=None,include_inactive=False):
     require(kind is None or kind in (*records.FIELDS,'evidence'),'INVALID_INPUT','Unknown record kind')
+    require(type(include_inactive) is bool,'INVALID_INPUT','Boolean include_inactive required')
     unions=[];args=[]
     for k in (*records.FIELDS,'evidence'):
         if k=='goal' or (kind and k!=kind):continue
@@ -21,7 +22,8 @@ def listing(core,goal,kind,limit,offset,search=None):
             if goal:sql+=' AND sc.goal_id=?'
         else:
             title='question' if k=='decision' else 'title'
-            sql=f"SELECT h.id,v.revision,'{k}' kind,h.goal_id,substr(v.{title},1,240) title,h.lifecycle FROM {k}s h JOIN {k}_versions v ON v.project_id=h.project_id AND v.id=h.id AND v.revision=h.current_revision WHERE h.project_id=? AND h.lifecycle<>'archived'"
+            sql=f"SELECT h.id,v.revision,'{k}' kind,h.goal_id,substr(v.{title},1,240) title,h.lifecycle FROM {k}s h JOIN {k}_versions v ON v.project_id=h.project_id AND v.id=h.id AND v.revision=h.current_revision WHERE h.project_id=?"
+            if not include_inactive:sql+=" AND h.lifecycle IN ('active','held')"
             if goal:sql+=' AND h.goal_id=?'
         args.append(core.project)
         if goal:args.append(goal)

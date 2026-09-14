@@ -10,7 +10,7 @@ from tests.core.helpers import Fixture
 class UpgradeTests(unittest.TestCase):
     def test_v4_copy_upgrade_preserves_original_and_records(self):
         original=Database.migrations
-        with patch.object(Database,'migrations',side_effect=lambda:original()[:4]):
+        with patch.object(Database,'migrations',side_effect=lambda:original()[:4]), patch('skip_core.record_state.metadata',return_value=None):
             f=Fixture();self.addCleanup(f.close);f.request()
             path=f.root/'candidate.db'
             before=list(f.db.connection.execute('SELECT id,intent FROM requests'))

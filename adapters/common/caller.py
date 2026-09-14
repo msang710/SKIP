@@ -27,3 +27,14 @@ def caller_scope(workspace, transport, receipt_scope=None):
         # Explicit client namespace is for deduplication only, not verified identity.
         return 'receipt-v2-'+digest([transport, str(Path(workspace).resolve()), receipt_scope]), False
     return 'connection-v2-'+uid(), False
+
+
+def participant_identity(workspace):
+    """Only the host-verified Codex session; no model-provided identity claims."""
+    thread=os.environ.get('CODEX_THREAD_ID')
+    if not thread or workspace is None:return None
+    from adapters.codex.provenance import current_user
+    root=Path(os.environ.get('CODEX_HOME') or Path.home()/'.codex')/'sessions'
+    try:current_user(root,thread,Path(workspace).resolve(strict=True))
+    except (CoreError,OSError,ValueError,KeyError):return None
+    return {'namespace':'codex-'+digest(str(root.resolve())), 'agent_id':None,'session_id':thread}

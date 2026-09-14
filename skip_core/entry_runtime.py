@@ -7,7 +7,7 @@ from .input_contract import normalize,classify,ACTS,OUTPUTS
 
 OPS={
  'input.ingest':(set(),set(),True),
- 'intent.propose':({'request_id','expected_revision','body'},set(),False),
+ 'intent.propose':({'expected_revision','body'},{'request_id','input_id','input_digest'},False),
  'action.propose':({'request_id','body'},{'id','expected_revision'},False),
  'response.bind':({'proposal_id','revision'},set(),True),
 }
@@ -37,7 +37,7 @@ def validate_body(core,body,envelope):
     require(not ('design' in body['acts'] and 'design_change' in body['constraints']),'CONFLICT','Design change prohibited')
     require(isinstance(body['targets'],list) and len(body['targets'])<=20,'INVALID_INPUT','Bounded targets required')
     for ref in body['targets']:
-        require(isinstance(ref,dict) and set(ref)=={'kind','id','revision'},'INVALID_INPUT','Exact target required')
+        require(isinstance(ref,dict) and set(ref)=={'kind','id','revision'} and type(ref['revision']) is int and ref['revision']>0,'INVALID_INPUT','Exact target required')
         r=records.get(core.c,core.project,ref['kind'],ref['id'],ref['revision'])
         require(r['revision']==r['current_revision'],'STALE','Selected target changed')
     require(all(ref in body['targets'] for ref in envelope['targets']),'CONFLICT','Cannot drop explicit selected record')
@@ -49,6 +49,12 @@ def validate_body(core,body,envelope):
     require(body['acts']==['answer'] or body['evidence_spans'],'INVALID_INPUT','Action lacks instruction evidence')
 
 def propose(core,p):
+    require(('request_id' in p) != ('input_id' in p),'INVALID_INPUT','Specify exactly one request_id or input_id')
+    if 'input_id' in p:
+        require('input_digest' in p,'INVALID_INPUT','Original input digest required')
+        from .input_authoring import propose as input_propose
+        return input_propose(core,p)
+    require('input_digest' not in p,'INVALID_INPUT','input_digest belongs to input_id')
     request,envelope=input_for(core,p['request_id'])
     require(envelope is not None,'PROVENANCE_UNAVAILABLE','Legacy request has no typed input; do not invent host provenance')
     body=p['body'];validate_body(core,body,envelope)
@@ -61,6 +67,10 @@ def propose(core,p):
     return {'request_id':p['request_id'],'revision':head+1,'digest':digest(body),'authority':'interpretation_only'}
 
 def inspect(core,p):
+    require(('request_id' in p) != ('input_id' in p),'INVALID_INPUT','Specify exactly one request_id or input_id')
+    if 'input_id' in p:
+        from .input_authoring import inspect as input_inspect
+        return input_inspect(core,p['input_id'])
     request,envelope=input_for(core,p['request_id'])
     row=core.c.execute('SELECT * FROM intent_interpretations WHERE project_id=? AND request_id=? ORDER BY revision DESC LIMIT 1',(core.project,p['request_id'])).fetchone()
     return {'request_id':request['id'],'input':envelope,'provenance':'verified' if envelope else 'legacy_unknown','interpretation':{'revision':row['revision'],'digest':row['digest'],'body':json.loads(row['body_json'])} if row else None,'authority':'reading_material'}
@@ -89,6 +99,8 @@ def assess(core,p):
     if 'tasks' in body['acts'] and not counts['plan']:missing.append('plan')
     if set(body['acts']) & {'implement','deploy'} and not counts['work_item']:missing.append('work_item')
     output_records={}
+    if 'goal' in outputs:
+        output_records['goal']=[{'id':goal,'revision':records.get(core.c,core.project,'goal',goal)['revision']}] if core.c.execute('SELECT 1 FROM goals WHERE project_id=? AND id=? AND origin_request_id=?',(core.project,goal,p['request_id'])).fetchone() else []
     for kind in outputs:
         if kind not in heads:continue
         ids={r[0] for r in core.c.execute(f'SELECT id FROM {kind}s WHERE project_id=? AND origin_request_id=?',(core.project,p['request_id']))}
@@ -112,7 +124,7 @@ def action_propose(core,p):
     request=core.one('requests',p['request_id']);body=p['body']
     require(isinstance(body,dict) and set(body)=={'action','target','scope_digest','constraints'},'INVALID_INPUT','Exact action proposal required')
     require(isinstance(body['target'],dict) and set(body['target'])=={'kind','id','revision'},'INVALID_INPUT','Exact proposal target required')
-    require(body['action'] in ACTS and isinstance(body['scope_digest'],str) and len(body['scope_digest'])==64 and isinstance(body['constraints'],list),'INVALID_INPUT','Invalid action basis')
+    require(body['action'] in {'investigate','requirements','design','tasks','implement','validate','deploy'} and isinstance(body['scope_digest'],str) and len(body['scope_digest'])==64 and isinstance(body['constraints'],list),'INVALID_INPUT','Invalid action basis')
     r=records.get(core.c,core.project,body['target']['kind'],body['target']['id'],body['target']['revision'])
     require(r['revision']==r['current_revision'],'STALE','Proposal target changed')
     require(core.c.execute('SELECT 1 FROM request_goals WHERE project_id=? AND request_id=? AND goal_id=?',(core.project,request['id'],r['goal_id'])).fetchone(),'PROJECT_MISMATCH','Proposal outside request')

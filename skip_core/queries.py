@@ -9,14 +9,17 @@ from .execution import verify_snapshot
 
 def query_core(core, query, p, principal, context):
     allowed = {
-        'entry.inspect': {'request_id'}, 'stage.assess': {'request_id','goal_id'},
+        'project.profile': {'revision','budget','include_proposals'},
+        'goal.list': {'cursor','limit'},
+        'entry.inspect': {'request_id','input_id'}, 'stage.assess': {'request_id','goal_id'},
         'request.list': {'goal_id','cursor','limit'}, 'request': {'id'},
         'status': {'goal_id','cursor','limit'}, 'inbox': {'goal_id','cursor','limit'},
         'context': {'goal_id','stage','budget','snapshot_id','work_id','request_id'}, 'record': {'kind','id','revision'},
         'trace': {'kind','id','revision'}, 'execution.status': {'execution_id'},
         'failure.history': {'id','limit','cursor'}, 'learning.list': {'kind','goal_id','limit','cursor'}, 'learning.record': {'kind','id','revision'}, 'guidance': {'goal_id','snapshot_id','work_id'}, 'assurance': {'claim_id','snapshot_id'},
         'changes': {'since','limit'}, 'settings': set(), 'risks': {'goal_id'},
-        'record.list': {'goal_id','cursor','limit','kind','search'},
+        'record.list': {'goal_id','cursor','limit','kind','search','include_inactive'},
+        'record.state_history': {'kind','id','cursor','limit'},
         'history': {'goal_id','cursor','limit','search'}, 'history.record': {'id','offset','length'},
     }
     require(query in allowed and isinstance(p,dict) and set(p)<=allowed[query],'INVALID_INPUT','Invalid query')
@@ -34,6 +37,9 @@ def query_core(core, query, p, principal, context):
     require(project is not None,'NOT_INITIALIZED','Connect this project first')
     sequence=core.c.execute('SELECT COALESCE(max(sequence),0) FROM events WHERE project_id=?',(core.project,)).fetchone()[0]
     result={'schema':'skip-core/v1','status':'ok','project_id':core.project,'sequence':sequence,'enforcement':'advisory'}
+    if query=='project.profile':
+        from .project_profile import read
+        return {**result,'data':read(core,p)}
     if query=='changes':
         since=p.get('since',sequence);bound=p.get('limit',100)
         require(type(since) is int and 0<=since<=sequence and type(bound) is int and 1<=bound<=100,'INVALID_INPUT','Invalid change window')
@@ -58,7 +64,10 @@ def query_core(core, query, p, principal, context):
                 freshness_cache[snap]='unverified'
         return freshness_cache[snap]
     def heads(kind,goal=None,limit=100,offset=0):
-        where="project_id=? AND lifecycle<>'archived'"; args=[core.project]
+        where="project_id=?"; args=[core.project]
+        if kind=="goal":
+            if query!="goal.list" and not goal:where+=" AND lifecycle IN ('active','held')"
+        else:where+=" AND lifecycle IN ('active','held')"
         if query=='inbox' and kind=='decision':
             where+=" AND NOT EXISTS(SELECT 1 FROM record_origins o WHERE o.project_id=decisions.project_id AND o.kind='decision' AND o.record_id=decisions.id AND o.revision=decisions.current_revision AND lower(o.source_status) IN ('confirmed','approved','accepted','확정','승인'))"
         if goal:
@@ -81,6 +90,10 @@ def query_core(core, query, p, principal, context):
     if goal:
         records.get(core.c,core.project,'goal',goal)
     from .history import summaries,read as read_history
+    if query=='goal.list':
+        items=heads('goal',limit=limit+1,offset=offset)
+        result['data']={'goals':items[:limit],'next_cursor':f'{sequence}:{offset+limit}' if len(items)>limit else None}
+        return result
     if query in ('entry.inspect','stage.assess'):
         from .entry_runtime import inspect,assess
         result['data']=(inspect if query=='entry.inspect' else assess)(core,p)
@@ -123,7 +136,12 @@ def query_core(core, query, p, principal, context):
         else:result['data']={'items':rows[:limit],'next_cursor':f'{sequence}:{offset+limit}' if len(rows)>limit else None}
     elif query=='record.list':
         from .record_views import listing
-        rows=listing(core,goal,p.get('kind'),limit+1,offset,p.get('search'))
+        rows=listing(core,goal,p.get('kind'),limit+1,offset,p.get('search'),p.get('include_inactive',False))
+        result['data']={'items':rows[:limit],'next_cursor':f'{sequence}:{offset+limit}' if len(rows)>limit else None}
+    elif query=='record.state_history':
+        records.get(core.c,core.project,p['kind'],p['id'])
+        from .record_state import decode
+        rows=[decode(r) for r in core.c.execute('SELECT * FROM record_state_changes WHERE project_id=? AND kind=? AND record_id=? ORDER BY state_version DESC LIMIT ? OFFSET ?',(core.project,p['kind'],p['id'],limit+1,offset))]
         result['data']={'items':rows[:limit],'next_cursor':f'{sequence}:{offset+limit}' if len(rows)>limit else None}
     elif query=='history':
         rows=summaries(core,goal,limit+1,offset,p.get('search'))
@@ -171,7 +189,8 @@ def query_core(core, query, p, principal, context):
         stage=p['stage']; kinds=['goal','decision']
         if stage in ('design','tasks','implementation','validation','restore'): kinds+=['requirement','plan']
         if stage in ('tasks','implementation','validation','restore'): kinds+=['work_item']
-        data={'goal_id':goal,'stage':stage,'records':[],'required_expansions':[],'complete':True}
+        from .project_profile import metadata
+        data={'project_profile':metadata(core),'goal_id':goal,'stage':stage,'records':[],'required_expansions':[],'complete':True}
         for kind in kinds:
             rows=heads(kind,goal,129)
             if len(rows)>128:
@@ -183,6 +202,16 @@ def query_core(core, query, p, principal, context):
                     if len(data['required_expansions'])<32:
                         data['required_expansions'].append({'kind':kind,'id':r['id'],'revision':r['revision']})
                 else: data['records'].append(r)
+        # Inactive records are context warnings, never current instructions.
+        data['inactive_records']=[]
+        for kind in kinds:
+            if kind=='goal':continue
+            inactive=core.c.execute(f"SELECT id FROM {kind}s WHERE project_id=? AND goal_id=? AND lifecycle IN ('rejected','superseded') ORDER BY id LIMIT 33",(core.project,goal)).fetchall()
+            if len(inactive)>32:
+                data['complete']=False;data['required_expansions'].append({'query':'record.list','kind':kind,'include_inactive':True,'reason':'inactive_record_limit'})
+            for row in inactive[:32]:
+                r=records.get(core.c,core.project,kind,row['id']);change=r['state_change'] or {}
+                data['inactive_records'].append({'kind':kind,'id':r['id'],'revision':r['revision'],'lifecycle':r['lifecycle'],'title':r['fields'].get('title',r['fields'].get('question')),'reason':change.get('reason',''),'replacement':change.get('replacement')})
         from .policy import effective
         data['policy']=effective(core,'implement' if stage=='implementation' else 'plan' if stage in ('requirements','design','tasks') else 'investigate')
         historical=summaries(core,goal,33)
@@ -211,7 +240,9 @@ def query_core(core, query, p, principal, context):
         data['authority']='Context is reading material, not execution permission'
         while len(encoded({**result,'data':data}).encode()) > budget:
             data['complete']=False
-            if 'entry_basis' in data:
+            if 'project_profile' in data:
+                data.pop('project_profile');data['required_expansions'].append({'query':'project.profile','reason':'budget'})
+            elif 'entry_basis' in data:
                 data.pop('entry_basis');data.pop('stage_assessment',None)
                 data['required_expansions'].append({'query':'entry.inspect','request_id':p['request_id'],'reason':'budget'})
             elif data.get('failure_guidance',{}).get('items'):
@@ -219,6 +250,8 @@ def query_core(core, query, p, principal, context):
                 data['required_expansions'].append({'kind':'guideline','id':removed['id'],'revision':removed['revision'],'query':'learning.record'})
             elif data.get('assurance',{}).get('claims'):
                 removed=data['assurance']['claims'].pop();data['required_expansions'].append({'kind':'claim','id':removed['id'],'revision':removed['revision'],'query':'learning.record'})
+            elif data.get('inactive_records'):
+                removed=data['inactive_records'].pop();data['required_expansions'].append({'kind':removed['kind'],'id':removed['id'],'revision':removed['revision'],'reason':'inactive_record_budget'})
             elif data['records']:
                 removed=data['records'].pop()
                 data['required_expansions'].append({'kind':removed['kind'],'id':removed['id'],'revision':removed['revision']})
@@ -278,4 +311,7 @@ def query_core(core, query, p, principal, context):
                         'next_cursor':f'{sequence}:{offset+limit}' if len(goals)>limit else None,
                         'view':{'result':'현재 기록','checks':'확인','remaining':'남은 일'}}
     require(len(encoded(result).encode())<=512000,'RESPONSE_TOO_LARGE','Narrow the goal or page size')
+    if query=='status':
+        from .project_profile import metadata
+        result['data']['project_profile']=metadata(core)
     return result

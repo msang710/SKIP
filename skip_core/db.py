@@ -79,7 +79,7 @@ class Database:
         name = getattr(exc, 'sqlite_errorname', 'SQLITE_ERROR')
         primary = getattr(exc, 'sqlite_errorcode', 0) & 255
         code, message = {
-            sqlite3.SQLITE_CANTOPEN:('DB_ACCESS_DENIED', 'Cannot open database or its WAL files; check access permissions'),
+            sqlite3.SQLITE_CANTOPEN:('DB_ACCESS_DENIED', 'Cannot open database or its WAL files; check the database path, parent directory, and sandbox/access permissions'),
             sqlite3.SQLITE_PERM:('DB_ACCESS_DENIED', 'Database permission denied'),
             sqlite3.SQLITE_READONLY:('DB_READ_ONLY', 'Database operation requires write access'),
             sqlite3.SQLITE_BUSY:('DB_BUSY', 'Database is busy; retry the same request key'),
@@ -103,17 +103,32 @@ class Database:
                             details=self.diagnostics(sorted(actual)))
 
     def _migrate(self):
-        with self.transaction():
-            exists = self.connection.execute("SELECT 1 FROM sqlite_master WHERE name='schema_migrations'").fetchone()
-            applied = dict(self.connection.execute('SELECT version,checksum FROM schema_migrations')) if exists else {}
+        # Explicit initialization/upgrade only. SQLite parent-table rebuild needs
+        # FK enforcement disabled before BEGIN; check every FK before committing.
+        # Queries never take this path. The exclusive writer transaction also
+        # makes a failed migration roll back its schema and rows together.
+        c = self.connection
+        c.execute('PRAGMA foreign_keys=OFF')
+        try:
+            c.execute('BEGIN IMMEDIATE')
+            exists = c.execute("SELECT 1 FROM sqlite_master WHERE name='schema_migrations'").fetchone()
+            applied = dict(c.execute('SELECT version,checksum FROM schema_migrations')) if exists else {}
             migrations = self.migrations()
             expected = {v: h for v, _, h in migrations}
             require(all(expected.get(v) == h for v, h in applied.items()), 'UNSUPPORTED_SCHEMA', 'Unknown migration')
             for version, sql, checksum in migrations:
                 if version not in applied:
                     for statement in statements(sql):
-                        self.connection.execute(statement)
-                    self.connection.execute('INSERT INTO schema_migrations VALUES(?,?,?)', (version, checksum, now()))
+                        c.execute(statement)
+                    c.execute('INSERT INTO schema_migrations VALUES(?,?,?)', (version, checksum, now()))
+            require(not c.execute('PRAGMA foreign_key_check').fetchall(), 'RECOVERY_REQUIRED', 'Migration foreign key check failed')
+            require(c.execute('PRAGMA integrity_check').fetchone()[0] == 'ok', 'RECOVERY_REQUIRED', 'Migration integrity check failed')
+            c.execute('COMMIT')
+        except BaseException:
+            if c.in_transaction: c.execute('ROLLBACK')
+            raise
+        finally:
+            c.execute('PRAGMA foreign_keys=ON')
 
     @contextlib.contextmanager
     def transaction(self, *, write=True):

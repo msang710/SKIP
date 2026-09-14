@@ -51,8 +51,9 @@ def get(c, project, kind, ident, revision=None):
             f'SELECT {",".join(fields)} FROM {table} WHERE project_id=? AND {owner}=? AND {version}=?',
             (project, ident, rev))]
     origin = c.execute('SELECT document_id,source_key,source_status,source_date,classification,unresolved_json FROM record_origins WHERE project_id=? AND kind=? AND record_id=? AND revision=?',(project,kind,ident,rev)).fetchone()
-    return {'origin': dict(origin) if origin else None, 'kind': kind, 'id': ident, 'revision': rev, 'current_revision': head['current_revision'],
-            'goal_id': head['goal_id'] if kind != 'goal' else ident, 'lifecycle': head['lifecycle'],
+    from .record_state import metadata
+    return {'state_change':metadata(c,project,kind,ident), 'origin': dict(origin) if origin else None, 'kind': kind, 'id': ident, 'revision': rev, 'current_revision': head['current_revision'],
+            'goal_id': head['goal_id'] if kind != 'goal' else ident, 'lifecycle': head['lifecycle'], 'state_version':head['state_version'],
             'digest': row['content_digest'], 'fields': {f: row[f] for f in FIELDS[kind]}, 'children': children}
 
 

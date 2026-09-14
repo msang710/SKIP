@@ -13,14 +13,14 @@ const mock=`export const useRpc=contract=>async(input={})=>{
  if(state.expire){state.expire=false;return {status:'error',code:'CONTEXT_EXPIRED'};}
  const {query,payload={}}=input,start=Number(payload.cursor??0),limit=payload.limit??30;
  if(query==='changes')return ok({sequence:state.seq,events:[],complete:true});
- if(query==='status')return ok({goals:state.goals,facts:[],checks:[],remaining:[],work_items:[],next_cursor:null});
+ if(query==='status'||query==='goal.list')return ok({goals:state.goals,facts:[],checks:[],remaining:[],work_items:[],next_cursor:null});
  if(query==='settings')return ok({settings:[]});
  if(query==='risks')return ok({assessments:[]});
  if(query==='record.list'){const rows=Array.from({length:120},(_,i)=>({kind:'plan',id:'d'+i,revision:i===0?state.seq:1,title:i===0?state.title:'설계 '+i}));return ok({items:rows.slice(start,start+limit),next_cursor:start+limit<120?String(start+limit):null});}
  if(query==='record')return ok({kind:'plan',id:payload.id,revision:state.seq,current_revision:state.seq,fields:{title:state.title,design_body:'본문 '+state.seq},children:{}});
  return ok({items:[],next_cursor:null});
 };`;
-const result=await build({stdin:{contents:`import React from 'react'; import {createRoot} from 'react-dom/client';import {CorePanel} from '${root}/plugins/paseo/core.panel.client.tsx';createRoot(document.getElementById('root')).render(<CorePanel context="workspace" workspaceId="test" host={{id:'local'}} layout={{compact:false,platform:'web'}} theme={{colors:{foreground:'#eaeaea',foregroundMuted:'#a7a7b0',surface0:'#17171c',accent:'#a9baff'}}}/>);`,resolveDir:root,loader:'tsx'},bundle:true,write:false,define:{global:'globalThis'},jsx:'automatic',alias:{'react':modules+'/react','react-dom':modules+'/react-dom','react-native':modules+'/react-native-web'},plugins:[{name:'mock-host',setup(b){b.onResolve({filter:/^@getpaseo\/plugin$/},()=>({path:'host',namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:mock,loader:'js'}));b.onResolve({filter:/core.shared$/},()=>({path:'contracts',namespace:'contracts'}));b.onLoad({filter:/.*/,namespace:'contracts'},()=>({contents:`export const connectCore={name:'skip.core.connect'},queryCore={name:'query'},userCore={name:'user'},closeCore={name:'skip.core.close'};` }));}}]});
+const result=await build({stdin:{contents:`import React from 'react'; import {createRoot} from 'react-dom/client';import {CorePanel} from '${root}/plugins/paseo/client/core.panel.tsx';createRoot(document.getElementById('root')).render(<CorePanel context="workspace" workspaceId="test" host={{id:'local'}} layout={{compact:false,platform:'web'}} theme={{colors:{foreground:'#eaeaea',foregroundMuted:'#a7a7b0',surface0:'#17171c',accent:'#a9baff'}}}/>);`,resolveDir:root,loader:'tsx'},bundle:true,write:false,define:{global:'globalThis'},jsx:'automatic',alias:{'react':modules+'/react','react-dom':modules+'/react-dom','react-native':modules+'/react-native-web'},plugins:[{name:'mock-host',setup(b){b.onResolve({filter:/^@getpaseo\/plugin\/client$/},()=>({path:'host',namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:mock,loader:'js'}));b.onResolve({filter:/shared\/core$/},()=>({path:'contracts',namespace:'contracts'}));b.onLoad({filter:/.*/,namespace:'contracts'},()=>({contents:`export const connectCore={name:'skip.core.connect'},queryCore={name:'query'},userCore={name:'user'},closeCore={name:'skip.core.close'};` }));}}]});
 const browser=await chromium.launch({headless:true,...(process.env.SKIP_UI_TEST_BROWSER?{executablePath:process.env.SKIP_UI_TEST_BROWSER}:{})});
 try{
 const page=await browser.newPage({viewport:{width:1200,height:800}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -29,6 +29,9 @@ await page.setContent('<style>html,body,#root{height:100%;margin:0}#root{display
 await page.getByRole('button',{name:'설정',exact:true}).click();
 await page.getByRole('button',{name:'+ 규칙 추가',exact:true}).click();
 await page.getByLabel('사용자 규칙 내용').fill('연결이 복구돼도 이 초안을 유지');
+await page.getByRole('switch',{name:'목표 목록 고정',exact:true}).click();
+await page.getByLabel('NOW와 목표 목록',{exact:true}).waitFor();
+await page.getByRole('button',{name:'기록 목록',exact:true}).click();
 await page.getByRole('button',{name:'설계',exact:true}).click();
 await page.getByRole('button',{name:'기록 더 보기',exact:true}).click();
 if(await page.getByRole('button',{name:/^설계 [0-9]+ plan$/}).count()<60) {
@@ -41,6 +44,7 @@ if(await page.getByRole('button',{name:/설계 59/}).count()!==1)throw Error('Lo
 await page.getByRole('button',{name:'설정',exact:true}).click();
 await page.screenshot({path:'.build/continuity-debug.png'});
 if(await page.getByLabel('사용자 규칙 내용').inputValue({timeout:3000})!=='연결이 복구돼도 이 초안을 유지')throw Error('Settings draft lost');
+await page.getByRole('button',{name:'기록 목록',exact:true}).click();
 await page.getByRole('button',{name:'설계',exact:true}).click();
 await page.getByRole('button',{name:/수정된 설계/}).click();
 await page.evaluate(()=>{window.fixture.seq++;window.fixture.title='다시 바뀐 설계';});

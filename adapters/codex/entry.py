@@ -11,30 +11,22 @@ from skip_core.db import Database,default_path
 from skip_core.errors import CoreError,require
 from skip_core.service import Core
 from adapters.common.identity import resolve_project
-from .provenance import current_user,infer_operation,is_continuation,proposal_reply
+from .provenance import current_user,proposal_reply
 from skip_core.input_contract import normalize,classify
 
 
-def run(workspace,session_root,thread_id,db_path,*,project_id=None,goal_id=None,activate=False,begin=None,finish=None):
+def run(workspace,session_root,thread_id,db_path,*,project_id=None,goal_id=None,activate=False,begin=None,finish=None,update_goals=None):
+    require(sum(bool(x) for x in (activate,begin,finish,update_goals is not None))<=1,'INVALID_INPUT','Choose one native operation')
     workspace=workspace.resolve(strict=True)
     user=current_user(session_root,thread_id,workspace)
     project=project_id or resolve_project(workspace,str(workspace),db_path)
     latest_id=user['id']
-    if (begin or finish) and is_continuation(user['text']):
-        require(re.search(r'계속|진행|\b(continue|proceed)\b',user['text'],re.I),'USER_ACTION_REQUIRED','A status question does not start work')
+    if finish:
+        # Finishing reports an already-authorized execution; it starts no work.
         with Database(db_path) as existing:
-            c=existing.connection
-            if begin:
-                row=c.execute('SELECT request_id FROM work_item_versions WHERE project_id=? AND id=? AND revision=?',
-                    (project,begin['work_id'],begin['revision'])).fetchone()
-            else:
-                row=c.execute('SELECT w.request_id FROM executions x JOIN work_item_versions w ON w.project_id=x.project_id AND w.id=x.work_item_id AND w.revision=x.work_revision WHERE x.project_id=? AND x.id=?',
-                    (project,finish)).fetchone()
-            require(row is not None,'NOT_FOUND','Referenced work is unavailable')
-            anchor=c.execute('SELECT i.external_event_key FROM requests r JOIN interactions i ON i.project_id=r.project_id AND i.id=r.interaction_id JOIN verified_interactions v ON v.project_id=i.project_id AND v.interaction_id=i.id WHERE r.project_id=? AND r.id=? AND v.verifier=?',
-                (project,row['request_id'],'codex-local-session-record')).fetchone()
-            require(anchor is not None,'USER_ACTION_REQUIRED','This continuation has no verified request in this Codex conversation')
-            user=current_user(session_root,thread_id,workspace,request_id=anchor['external_event_key'])
+            anchor=existing.connection.execute('SELECT i.* FROM executions x JOIN authorizations a ON a.project_id=x.project_id AND a.id=x.authorization_id JOIN interactions i ON i.project_id=a.project_id AND i.id=a.interaction_id JOIN verified_interactions v ON v.project_id=i.project_id AND v.interaction_id=i.id WHERE x.project_id=? AND x.id=? AND v.verifier=?',(project,finish,'codex-local-session-record')).fetchone()
+            require(anchor is not None and anchor['origin_context_digest']==digest('codex-input-'+digest([thread_id,anchor['external_event_key']])),'USER_ACTION_REQUIRED','Execution belongs to another conversation')
+            user={**user,'id':anchor['external_event_key'],'text':anchor['body']}
     identity=('codex',thread_id,user['id'])
     def verify():
         latest=current_user(session_root,thread_id,workspace)
@@ -42,6 +34,8 @@ def run(workspace,session_root,thread_id,db_path,*,project_id=None,goal_id=None,
         return identity
     origin='codex-input-'+digest([thread_id,user['id']])
     ctx=ExecutionContext(project,{'main':workspace},identity,verify,can_continue=True,context_id=origin,caller_verified=True)
+    from adapters.common.caller import participant_identity
+    ctx.participant=participant_identity(workspace)
     # Stable per selected host user turn; process restarts do not invent a new request.
     principal=Principal(project,origin,kind='human',method='host_user_turn',
                         verifier='codex-local-session-record',event_key=user['id'],user_text=user['text'])
@@ -56,8 +50,14 @@ def run(workspace,session_root,thread_id,db_path,*,project_id=None,goal_id=None,
         if activate:
             command={'schema':'skip-core/v1','command':'project.activate','project_id':project,'key':digest([user['id'],'activate']),
                      'payload':{'name':workspace.name}}
-            return core.execute(command,principal,ctx)
-        if operation=='answer' and re.fullmatch(r'\s*(그래\s*)?(승인이야|승인해|승인|동의해|approve|approved)[.!\s]*',user['text'],re.I):
+            result=core.execute(command,principal,ctx)
+            result['data']['project_profile']=core.query('status',{},principal,ctx)['data']['project_profile']
+            return result
+        if update_goals is not None:
+            require(not (activate or begin or finish),'INVALID_INPUT','Choose one native operation')
+            return core.execute({'schema':'skip-core/v1','command':'goal.transition','project_id':project,
+                'key':digest([user['id'],'goal.transition',update_goals]),'payload':update_goals},principal,ctx)
+        if not begin and not finish and operation=='answer' and re.fullmatch(r'\s*(그래\s*)?(승인이야|승인해|승인|동의해|approve|approved)[.!\s]*',user['text'],re.I):
             candidates=[]
             if goal_id:
                 rows=db.connection.execute('SELECT p.* FROM action_proposals p JOIN request_goals g ON g.project_id=p.project_id AND g.request_id=p.request_id WHERE p.project_id=? AND g.goal_id=? AND NOT EXISTS(SELECT 1 FROM action_proposals n WHERE n.project_id=p.project_id AND n.id=p.id AND n.revision>p.revision) LIMIT 101',(project,goal_id)).fetchall()
@@ -75,14 +75,23 @@ def run(workspace,session_root,thread_id,db_path,*,project_id=None,goal_id=None,
                     if goal_id:result['data']['context']=core.query('context',{'goal_id':goal_id,'stage':'restore'},principal,ctx)['data']
                     return result
         if begin or finish:
-            require(operation in ('plan','implement','investigate','deploy'),'USER_ACTION_REQUIRED','The current user turn must authorize this work')
+            if begin:
+                from .execution_intent import interpretation as saved_interpretation, authorize
+                body,linked=saved_interpretation(core,principal)
+                work=core.query('record',{'kind':'work_item','id':begin['work_id'],'revision':begin['revision']},principal,ctx)['data']
+                authorize(core,principal,thread_id,work,body,linked)
+                semantic_digest=digest([body,linked])
+                def verify_execution():
+                    identity_now=verify()
+                    current_body,current_link=saved_interpretation(core,principal)
+                    require(digest([current_body,current_link])==semantic_digest,'STALE','Execution interpretation changed; refresh before continuing')
+                    from skip_core import records
+                    current_work=records.get(core.c,project,'work_item',begin['work_id'],begin['revision'])
+                    authorize(core,principal,thread_id,current_work,current_body,current_link)
+                    return identity_now
+                ctx.verify=verify_execution
             op='execution.begin_current' if begin else 'execution.finish_current'
             payload=begin if begin else {'execution_id':finish}
-            if begin:
-                work=core.query('record',{'kind':'work_item','id':begin['work_id'],'revision':begin['revision']},principal,ctx)['data']
-                allowed=set(acts)|{'investigate'}
-                if 'implement' in acts:allowed.add('validate')
-                require(work['fields']['operation'] in allowed,'USER_ACTION_REQUIRED','Action exceeds the current user request')
             return core.execute({'schema':'skip-core/v1','command':op,'project_id':project,'key':digest([user['id'],op,payload]),'payload':payload},principal,ctx)
         if user['text'].startswith('SKIP 사용자 선택\n'):
             selected=json.loads(user['text'].split('\n',1)[1])
@@ -90,7 +99,10 @@ def run(workspace,session_root,thread_id,db_path,*,project_id=None,goal_id=None,
                     and selected['project_id']==project,'INVALID_INPUT','Invalid selected card')
             p={k:selected[k] for k in ('decision_id','revision','option_id')}
             return core.execute({'schema':'skip-core/v1','command':'decision.select','project_id':project,'key':digest(user['id']),'payload':p},principal,ctx)
+        captured=core.execute({'schema':'skip-core/v1','command':'input.ingest','project_id':project,'key':digest([user['id'],'input']),'payload':{}},principal,ctx)
+        entry=core.query('entry.inspect',{'input_id':captured['data']['input_id']},principal,ctx)['data']
         def with_context(result, selected_goal):
+            result['data']['entry_basis']=entry
             if selected_goal:
                 result['data']['context']=core.query('context',{'goal_id':selected_goal,'stage':'restore'},principal,ctx)['data']
             return result
@@ -100,22 +112,12 @@ def run(workspace,session_root,thread_id,db_path,*,project_id=None,goal_id=None,
             require(selected['current_revision']==target['revision'],'STALE','Selected record changed')
             require(not goal_id or selected['goal_id']==goal_id,'PROJECT_MISMATCH','Selected record outside goal')
             goal_id=selected['goal_id']
-            if operation=='answer':return {'schema':'skip-core/v1','status':'ok','data':{'record':selected,'authority':'reading_material'},'enforcement':'advisory'}
-        if operation=='answer' or is_continuation(user['text']):
-            return with_context(core.query('status',{'goal_id':goal_id} if goal_id else {},principal,ctx),goal_id)
-        require(operation in ('plan','implement','investigate','deploy'),'USER_ACTION_REQUIRED','A concrete current request is needed')
-        payload={'text':user['text'],'operation':operation}
-        if goal_id:payload['goal_id']=goal_id
-        core.execute({'schema':'skip-core/v1','command':'input.ingest','project_id':project,'key':digest([user['id'],'input']),'payload':{}},principal,ctx)
-        result=core.execute({'schema':'skip-core/v1','command':'request.submit','project_id':project,'key':digest(user['id']),'payload':payload},principal,ctx)
-        request_id=result['data']['request_id']
-        body={k:interpretation[k] for k in ('acts','constraints','targets','evidence_spans','unresolved')}
-        existing=core.query('entry.inspect',{'request_id':request_id},principal,ctx)['data']['interpretation']
-        if existing is None:
-            core.execute({'schema':'skip-core/v1','command':'intent.propose','project_id':project,'key':digest([user['id'],'interpretation']),'payload':{'request_id':request_id,'expected_revision':0,'body':body}},principal,ctx)
-        result['data']['entry_basis']=core.query('entry.inspect',{'request_id':request_id},principal,ctx)['data']
-        result['data']['stage_assessment']=core.query('stage.assess',{'request_id':request_id,'goal_id':result['data']['goal']['id']},principal,ctx)['data']
-        return with_context(result,result['data']['goal']['id'])
+            if operation=='answer':return {'schema':'skip-core/v1','status':'ok','data':{'record':selected,'entry_basis':entry,'authority':'reading_material'},'enforcement':'advisory'}
+        # Native entry captures the actual turn. The calling agent supplies its
+        # semantic interpretation through entry.submit; no keyword creates a goal.
+        result=core.query('status',{'goal_id':goal_id} if goal_id else {},principal,ctx)
+        return with_context(result,goal_id)
+
 
 
 def main(argv=None):
@@ -123,10 +125,11 @@ def main(argv=None):
     p.add_argument('--project');p.add_argument('--goal');p.add_argument('--activate',action='store_true');p.add_argument('--db',type=Path,default=default_path())
     p.add_argument('--begin-current',help='JSON work/revision/risk references; user provenance still comes from the host')
     p.add_argument('--finish-current')
+    p.add_argument('--update-goals',help='JSON current input reference and exact goal transitions; actual user provenance is read from the host')
     a=p.parse_args(argv)
     try:
         root=Path(os.environ.get('CODEX_HOME') or Path.home()/'.codex')/'sessions'
-        result=run(a.workspace,root,os.environ.get('CODEX_THREAD_ID',''),a.db,project_id=a.project,goal_id=a.goal,activate=a.activate,begin=json.loads(a.begin_current) if a.begin_current else None,finish=a.finish_current)
+        result=run(a.workspace,root,os.environ.get('CODEX_THREAD_ID',''),a.db,project_id=a.project,goal_id=a.goal,activate=a.activate,begin=json.loads(a.begin_current) if a.begin_current else None,finish=a.finish_current,update_goals=json.loads(a.update_goals) if a.update_goals else None)
         print(encoded(result));return 0
     except CoreError as exc:print(encoded(exc.result()));return 2
     except (OSError,ValueError,KeyError) as exc:print(encoded(CoreError('USER_ACTION_REQUIRED',str(exc)).result()));return 2

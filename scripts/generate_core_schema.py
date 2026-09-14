@@ -33,8 +33,14 @@ def contract():
         'authoring.amend':{'base':AuthoringBase,'changes':list[Amendment]},
         'authoring.result':{'base':AuthoringBase,'snapshot_id':str,'evidence':ResultEvidence,
                             'execution_id':NotRequired[str],'now':NotRequired[CurrentFact],'failure':NotRequired[FailureReport]}}
+    from skip_mcp.entry_types import EntrySubmission,GoalTransition,RecordStateSubmission
     for variant in variants:
         name=variant['properties']['command']['const']
+        if name in ('entry.submit','goal.transition','record.set_state'):
+            schema=TypeAdapter({'entry.submit':EntrySubmission,'goal.transition':GoalTransition,'record.set_state':RecordStateSubmission}[name]).json_schema()
+            definitions.update(schema.pop('$defs',{}))
+            variant['properties']['payload']=schema
+            continue
         if name not in authoring:continue
         model=TypedDict(name,authoring[name]);model.__pydantic_config__={'extra':'forbid'}
         schema=TypeAdapter(model).json_schema()

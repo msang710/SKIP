@@ -62,6 +62,14 @@ def children(core,b,kind,groups,aliases,existing=None):
    require(set(row)==set(records.CHILDREN[kind][group][3]),'INVALID_INPUT',f'Invalid fields in children.{group}[{i}]')
  return output
 
+def validate_work_links(kind,fields,groups):
+ if kind!='work_item' or fields.get('workflow_depth')!='full':return
+ missing=[f'children.{group}' for group in ('plan_items','requirements') if not groups.get(group)]
+ if missing:
+  raise CoreError('INVALID_INPUT','Full work requires direct plan-item and requirement links',details={
+   'constraint':'full work needs plan and requirement','missing_fields':missing,
+   'hint':'Link each full work item to both a plan item and a requirement. Plan requirements and work checks do not replace direct work requirements.'})
+
 def located(fn,path):
  try:return fn()
  except sqlite3.IntegrityError as e:
@@ -82,6 +90,7 @@ def submit(core,p):
     require('request_id' not in fields,'INVALID_INPUT','Work request_id is supplied by base; omit it')
     fields['request_id']=b['request_id']
    ch=children(core,b,kind,item.get('children',{}),aliases)
+   validate_work_links(kind,fields,ch)
    r=core._record_propose_revision({'kind':kind,'expected_revision':0,'request_id':b['request_id'],'goal_id':b['goal_id'],'fields':fields,'children':ch})
    aliases[key]=r;return {'client_ref':key,'outcome':'created',**r}
   saved.append(located(one,f'records[{i}]'))
@@ -117,6 +126,7 @@ def amend(core,p):
      if matches:ch[group][ch[group].index(matches[0])]=row
      else:ch[group].append(row)
    if fields==old['fields'] and ch==old['children']:return {'outcome':'unchanged',**old}
+   validate_work_links(t['kind'],fields,ch)
    # Preserve original work request: editing its content is not a new execution request.
    payload={'kind':t['kind'],'id':t['id'],'expected_revision':t['revision'],'request_id':b['request_id'],'goal_id':b['goal_id'],'fields':fields,'children':ch}
    if t['kind']=='work_item':payload['request_id']=fields['request_id']

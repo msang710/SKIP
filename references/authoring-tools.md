@@ -1,3 +1,19 @@
+## 목표가 아직 없는 실제 요청
+
+Codex native entry의 `entry_basis`에서 실제 원문의 `input_id`, `input.digest`, parts를 받는다. `skip_enter`는 해석과 필요한 기록을 한 번에 저장한다. 새 목표만 필요하면 `records: []`; 목표 생성은 계획 작성과 다르다. 파서 제안이 `unresolved`여도 에이전트가 원문을 해석해 제출할 수 있다. 원문을 고쳐 보내거나 사용자에게 특정 문구를 다시 말하게 하지 않는다.
+
+입력 필드: `input_id`, `input_digest`, `expected_revision`, `body: {acts, constraints, targets, evidence_spans, unresolved}`, `target`, `records`, `submission_id`.
+
+- target create: `{mode: "create", fields: {title, intent, success_definition}}`, acts에 `create_goal` 포함.
+- target existing: `{mode: "existing", goal_id, revision}`. 정확한 목표를 명시한다.
+- target none: `{mode: "none"}`, records는 빈 배열. 조회나 미해결 의미에는 목표를 생성하지 않는다.
+
+`evidence_spans`는 entry의 원래 instruction part ID와 start/end를 그대로 사용한다. 제목 등 인용 문자열은 값으로 사용할 수 있지만 인용 명령을 실행 지시로 바꾸지 않는다. `record`는 기록 작성, `design`은 plan, `tasks`는 work_item을 뜻한다. 단순 create_goal에 plan을 강제로 붙이지 않는다. 필요한 기록의 bundle 형식은 기존 submit과 같다.
+
+CLI: `skip --project <project> --receipt-scope <client> enter --submission-id <unique-id> < payload.json`. JSON은 임시 전송용이다. 원문 접수는 Codex native adapter 또는 실제 native UI/interactive request에서 한다. MCP/CLI의 모델 명령은 human 원문을 위조할 수 없다.
+
+성공 receipt의 authoring_base로 이후 submit/amend/result를 호출한다. 원문 하나의 같은 제출은 다른 재시도 키에서도 중복 목표를 만들지 않는다. 다른 내용으로 재시도하면 충돌한다. 실제 권한은 별도 native execution 검증이며 entry.submit은 이를 만들지 않는다.
+
 # 기록 제출
 
 MCP는 연결된 `skip_submit`, `skip_amend`, `skip_result`를 우선 사용한다. 도구 입력 스키마에 기록 종류별 필드가 노출된다. 별도 Python 스크립트나 SQL을 작성할 필요가 없다. Markdown은 설명 문자열 안에서 그대로 쓴다.
@@ -62,6 +78,14 @@ skip --project <project> --receipt-scope <client> submit --submission-id <unique
 ```
 
 이 파일은 임시 전송용이며 별도 업무 기록 저장소가 아니다. CLI의 `amend`, `result`도 같은 방식으로 입력한다.
+
+## full 작업의 필수 연결
+
+`workflow_depth: "full"`인 각 작업은 `children.plan_items`와 `children.requirements`를 모두 직접 가져야 한다. 계획의 요구사항 연결이나 작업의 `checks`만으로 대체되지 않는다. 같은 제출에서는 요구사항 → 계획 → 작업 순서로 배치하고 `$client_ref`를 사용한다. 기존 요구사항을 재사용할 때는 정확한 ID와 revision을 연결한다. 누락을 피하려고 업무 위험에 맞지 않는 `compact`로 낮추거나 요구사항을 임의 생성하지 않는다.
+
+누락 시 `INVALID_INPUT`의 `input_path`는 제출/수정 항목, `missing_fields`는 해당 항목에서 빠진 관계를 가리킨다. 관계를 고친 제출은 새 `submission_id`로 전송한다. 실패한 일괄 제출은 전부 롤백된다.
+
+SQLite의 `DB_ACCESS_DENIED` / `SQLITE_CANTOPEN`은 경로·부모 디렉터리·샌드박스 접근 문제를 구분해 확인한다. 오류 이름만으로 원인을 확정하지 않는다. 샌드박스 접근 제한이면 호스트의 권한 확장 절차로 같은 명령을 재시도한다. DB를 다른 위치에 새로 만들거나 권한을 일괄 완화하지 않는다.
 
 ## 필요한 부분만 수정
 

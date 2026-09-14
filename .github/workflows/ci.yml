@@ -59,6 +59,8 @@ jobs:
             command: npm test
           - name: TypeScript
             command: npm run typecheck
+          - name: Paseo 0.8 compiler
+            command: cd ../.. && PASEO_SERVER_ROOT="$RUNNER_TEMP/paseo08/node_modules/@getpaseo/server" node tests/plugin_compat.mjs
     defaults:
       run:
         working-directory: plugins/paseo
@@ -73,6 +75,9 @@ jobs:
           cache-dependency-path: plugins/paseo/package-lock.json
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install isolated Paseo compiler
+        if: matrix.name == 'Paseo 0.8 compiler'
+        run: npm install --prefix "$RUNNER_TEMP/paseo08" --ignore-scripts --no-audit --no-fund @getpaseo/server@0.8.0
       - name: Run check
         run: ${{ matrix.command }}
 

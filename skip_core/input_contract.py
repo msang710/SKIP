@@ -5,8 +5,8 @@ import shlex
 from .common import digest
 from .errors import require
 
-ACTS={'answer','investigate','decide','requirements','design','tasks','implement','validate','deploy','resume','cancel'}
-OUTPUTS={'answer':[], 'investigate':['observation','evidence'], 'decide':['decision'], 'requirements':['requirement'], 'design':['plan'], 'tasks':['work_item'], 'implement':['execution','evidence'], 'validate':['evidence'], 'deploy':['execution','evidence'], 'resume':[], 'cancel':[]}
+ACTS={'answer','investigate','decide','requirements','design','tasks','implement','validate','deploy','resume','cancel','create_goal','record','unresolved'}
+OUTPUTS={'answer':[], 'investigate':['observation','evidence'], 'decide':['decision'], 'requirements':['requirement'], 'design':['plan'], 'tasks':['work_item'], 'implement':['execution','evidence'], 'validate':['evidence'], 'deploy':['execution','evidence'], 'resume':[], 'cancel':[], 'create_goal':['goal'], 'record':[], 'unresolved':[]}
 
 def normalize(value,project):
     require(isinstance(value,str) and len(value.encode())<=256000,'INVALID_INPUT','Bounded input text required')
@@ -45,7 +45,7 @@ def classify(envelope):
     value=''.join(p['text'] for p in envelope['parts'] if p['role']=='user_instruction').strip()
     constraints=[]
     if re.search(r'설계\s*변경.{0,8}(말|않|금지)',value):constraints.append('design_change')
-    if re.search(r'배포.{0,10}(말|않|아직|금지)|do not deploy',value,re.I):constraints.append('deploy')
+    if re.search(r'배포.{0,10}(말|마|않|아직|금지)|do not deploy',value,re.I):constraints.append('deploy')
     if re.search(r'(구현|수정|코드\s*변경).{0,8}(하지|말고|금지)|do not (implement|edit)',value,re.I):constraints.append('implement')
     cleaned=re.sub(r'설계\s*변경.{0,8}?말고','',value)
     if not value:acts=['answer']
@@ -53,12 +53,12 @@ def classify(envelope):
     elif re.fullmatch(r'(계속해|계속 진행해|continue|proceed)[.!\s]*',value,re.I):acts=['resume']
     elif re.fullmatch(r'(취소해|중지해|cancel|stop)[.!\s]*',value,re.I):acts=['cancel']
     elif re.search(r'상세\s*구현\s*계획|작업\s*분해|\btasks\b',value,re.I):acts=['tasks']
-    elif re.search(r'구현\s*(해|하자|하세요|시작|진행)|수정해|고쳐|\b(implement|fix)\b',cleaned,re.I) and 'implement' not in constraints:acts=['implement']
+    elif re.search(r'(?:^|\n)\s*구현\s*(?:$|\n)|구현\s*(해|하자|하세요|시작|진행)|수정해|고쳐|\b(implement|fix)\b',cleaned,re.I) and 'implement' not in constraints:acts=['implement']
     elif re.search(r'설계|\bdesign\b',value,re.I):acts=['design']
     elif re.search(r'요구사항|\brequirements\b',value,re.I):acts=['requirements']
     elif re.search(r'계획|검토|분석|\b(plan|review|analyze)\b',value,re.I):acts=['design' if '계획' in value else 'investigate']
     elif re.search(r'배포해|\bdeploy\b',value,re.I) and 'deploy' not in constraints:acts=['deploy']
     elif re.search(r'검증해|\bvalidate\b',value,re.I):acts=['validate']
-    else:acts=['answer']
+    else:acts=['unresolved']
     spans=[{'part_id':p['part_id'],'start':p['start'],'end':p['end']} for p in envelope['parts'] if p['role']=='user_instruction' and p['text'].strip()]
-    return {'acts':acts,'constraints':constraints,'targets':envelope['targets'],'evidence_spans':spans,'unresolved':[], 'basis':'parser_suggestion','semantic_guarantee':False}
+    return {'acts':acts,'constraints':constraints,'targets':envelope['targets'],'evidence_spans':spans,'unresolved':['meaning_not_classified'] if acts==['unresolved'] else [], 'basis':'parser_suggestion','semantic_guarantee':False}

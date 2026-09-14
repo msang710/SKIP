@@ -12,6 +12,7 @@ DEFAULT_RULES = {
  'C-008':'Preserve NOT_RUN, partial verification and gaps.',
  'C-009':'Approval covers only the named action and scope.',
  'C-010':'Preserve unrelated user work and records.',
+ 'C-011':'At natural task boundaries, preserve durable results before context compaction and restore necessary context afterwards; never trade correctness for token reduction.',
 }
 
 def effective(core, operation):

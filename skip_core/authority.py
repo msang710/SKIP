@@ -44,6 +44,9 @@ class ExecutionContext:
     revoked: bool = False
     caller_verified: bool = False
     renewable_source: bool = False
+    participant: dict | None = None
+    participant_route: str = "agent"
+    participant_touched: bool = False
     _tickets: dict = field(default_factory=dict, repr=False)
 
     @property

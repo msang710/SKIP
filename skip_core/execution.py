@@ -81,7 +81,7 @@ def basis(core, work_id, revision):
     # Dependency checks use recorded verification, not agent process exit.
     for dep in work['children']['dependencies']:
         dependency=records.get(core.c,core.project,'work_item',dep['depends_on_id'],dep['depends_on_revision'])
-        require(dependency['current_revision']==dependency['revision'],'STALE','Dependency changed')
+        require(dependency['current_revision']==dependency['revision'] and dependency['lifecycle']=='active','STALE','Dependency changed')
         checks=dependency['children']['checks']
         for check in checks:
             if not check['required']: continue

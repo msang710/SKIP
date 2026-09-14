@@ -24,9 +24,7 @@ for directory in ('skip_core','skip_mcp','adapters','schemas'):
     shutil.copytree(source/directory,release/directory,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
 for path in ('SKILL.md','agents/openai.yaml','references/db-core-contract.md','ui/mcp-app/dist/index.html','requirements/core.txt'):
     target=release/path;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source/path,target)
-plugin=release/'plugins/paseo';plugin.mkdir(parents=True)
-for name in ('index.ts','core.panel.client.tsx','core.record.client.tsx','records.document.tsx','core.overview.ts','core.bridge.server.ts','session-routing.server.ts','turn-receipt.ts','core.shared.ts','core.invocations.ts','intent.shared.ts','paseo-plugin.json','paseo-plugin.d.ts','tsconfig.json','package.json','package-lock.json'):
-    shutil.copy2(source/'plugins/paseo'/name,plugin/name)
+shutil.copytree(source/'plugins/paseo',release/'plugins/paseo',ignore=shutil.ignore_patterns('node_modules','tests','__pycache__','*.pyc'))
 manifest={p.relative_to(release).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in release.rglob('*') if p.is_file()}
 (release/'release-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 state={'source':str(source),'root':str(base),'backup':str(backup),'release':str(release),'files':len(manifest),'status':'STAGED_NOT_ACTIVE'}

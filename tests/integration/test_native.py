@@ -54,7 +54,12 @@ class NativeTests(unittest.TestCase):
                 fixture.actor=lambda human=False,words='Actual request',origin=None: Principal('p',fixture.ctx.context_id)
                 original=fixture.command
                 fixture.command=lambda op,p,key=None: dict(original(op,p,key),project_id='p')
-                fixture.request_id=a['data']['request_id'];fixture.goal=a['data']['goal']['id']
+                entry=a['data']['entry_basis']
+                self.assertEqual(database.connection.execute('SELECT count(*) FROM goals').fetchone()[0],0)
+                body={k:entry['suggestion'][k] for k in ('acts','constraints','targets','evidence_spans','unresolved')}
+                body.update(acts=['create_goal','implement'],unresolved=[])
+                saved=fixture.call('entry.submit',{'input_id':entry['input_id'],'input_digest':entry['input']['digest'],'expected_revision':0,'body':body,'target':{'mode':'create','fields':{'title':'Change','intent':'Implement change','success_definition':'Test passes'}},'records':[]})
+                fixture.request_id=saved['authoring_base']['request_id'];fixture.goal=saved['goal']['id']
                 fixture.work()
                 prepare=fixture.prepare
             started=run(workspace,sessions,thread,db,project_id='p',begin=prepare)
@@ -63,11 +68,24 @@ class NativeTests(unittest.TestCase):
             path.write_text(''.join(json.dumps(v)+'\n' for v in entries))
             finished=run(workspace,sessions,thread,db,project_id='p',finish=started['data']['execution_id'])
             self.assertFalse(finished['data']['validation_complete'])
+            # A compound continuation must use saved semantics, not a keyword list.
+            entries.append({'type':'response_item','payload':{'type':'message','role':'user','id':'user3','content':[{'type':'input_text','text':'선택했어 계속해'}]}})
+            path.write_text(''.join(json.dumps(v)+'\n' for v in entries))
+            captured=run(workspace,sessions,thread,db,project_id='p')['data']['entry_basis']
+            with self.assertRaises(CoreError) as missing:
+                run(workspace,sessions,thread,db,project_id='p',begin=prepare)
+            self.assertEqual(missing.exception.code,'INTERPRETATION_REQUIRED')
+            with Database(db) as database:
+                fixture.db=database;fixture.core=Core(database)
+                body=dict(acts=['resume'],constraints=[],unresolved=[],targets=[{'kind':'work_item','id':prepare['work_id'],'revision':prepare['revision']}],evidence_spans=captured['suggestion']['evidence_spans'])
+                fixture.call('entry.submit',dict(input_id=captured['input_id'],input_digest=captured['input']['digest'],expected_revision=0,body=body,target={'mode':'none'},records=[]))
+            resumed=run(workspace,sessions,thread,db,project_id='p',begin=prepare)
+            self.assertEqual(resumed['data']['authorization'],'ALLOW')
 
 
     def test_cli_rejects_noninteractive_activation_and_matches_query(self):
         f=Fixture();self.addCleanup(f.close);f.work()
-        args=[sys.executable,'-m','skip_core.cli','--db',str(f.db.path),'--project','project']
+        args=[sys.executable,'-m','skip_core.cli','--db',str(f.db.path),'--project','project','--workspace',str(f.root)]
         out=subprocess.run(args+['query','status','--input','{}'],capture_output=True,text=True,timeout=10,check=True)
         self.assertEqual(json.loads(out.stdout),f.core.query('status',{},f.actor()))
         out=subprocess.run(args+['--workspace',str(f.root),'activate'],input='connect\n',capture_output=True,text=True,timeout=10)

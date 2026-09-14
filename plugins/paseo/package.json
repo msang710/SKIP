@@ -3,17 +3,20 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "test": "node --import tsx --test intent.server.test.ts records.server.test.ts workflow.server.test.ts records.presentation.test.ts session-routing.test.ts core.overview.test.ts core.recovery.test.ts core.continuity.test.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@getpaseo/client": "^0.4.0",
+    "@getpaseo/client": "0.8.0",
     "@tanstack/react-query": "^5.90.11",
     "@types/react": "~19.2.0",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "typescript": "^5.9.3",
     "tsx": "^4.20.6",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@getpaseo/plugin": "0.8.0",
+    "@getpaseo/protocol": "0.8.0",
+    "@types/node": "^22.0.0"
   }
 }

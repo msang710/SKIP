@@ -1,3 +1,6 @@
+> [!WARNING]
+> **Historical contract — retired file-based runtime.** This document is kept for migration, regression, and design history only. It does not define current SKIP behavior and must not be used for new installations, integrations, or execution decisions. Current authority: [`db-core-contract.md`](db-core-contract.md). See [`README.md`](README.md) for the reference authority map.
+
 # Minimal entry and adaptive execution
 
 This contract is additive. `workflow-plan/v2` and `execution-gate/v2` never replace or impersonate v1 artifact approval gates. All gates are advisory; SKIP does not intercept host writes.

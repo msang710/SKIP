@@ -1,6 +1,6 @@
 ---
 name: skip
-description: Supervise coding work through current evidence, explicit product decisions and a shared SQLite Core. Use for meaningful feature planning, business rules, implementation and restoring an existing SKIP goal. Keep the user's IDE and agent; adapt procedure to failure cost. Skip trivial self-contained edits unless explicitly invoked.
+description: Preserve coding continuity across context compression, session changes and agent handoffs through current evidence, explicit product decisions, failure history and a shared SQLite Core. Use when meaningful work may outlive one context window, when rejected alternatives or decision rationale must survive, for material feature/business-rule planning and implementation, or when restoring an existing SKIP goal. Keep the user's IDE and agent; skip trivial self-contained edits unless explicitly invoked.
 ---
 
 # SKIP
@@ -8,6 +8,18 @@ description: Supervise coding work through current evidence, explicit product de
 Read the decisions. Skip the implementation details.
 
 Use the current user's language. Keep FACT (observed), PRODUCT (human policy) and DESIGN (technical choice) distinct. Use the existing agent and IDE. Do not ask users to operate a documentation workflow.
+
+## When to invoke SKIP
+
+Use SKIP when any of these are true:
+
+- Meaningful coding work may cross context compression, a conversation boundary, or a handoff to another agent.
+- The current repository shows what exists but not why a product decision, design, or constraint exists.
+- Rejected alternatives, failed attempts, unresolved verification, or their evidence must remain recoverable instead of being rediscovered.
+- A fresh session must resume an existing goal without treating conversation memory as project truth.
+- The change affects material business rules, inventory, money, permissions, persisted data, recovery, or external state.
+
+Do not invoke it automatically for trivial self-contained edits when the current request and repository already contain all context needed to complete and verify the change.
 
 ## First entry
 
@@ -92,7 +104,6 @@ Entry/context includes `project_profile` metadata only. A new session does not r
 When the user asks to tidy, complete, hold, archive or reopen goals, read `skip_goals` and the relevant completion evidence. Do not equate finished execution with fulfilled goal scope. Capture the actual current request through native entry, then use `skip_update_goals` with its input ID/digest, original instruction spans and exact changes (`id`, `revision`, `state_version`, `from_state`, `to_state`, `reason`, `evidence`). Supporting records use exact kind/id/revision; do not manufacture passing checks. The tool uses the native Codex adapter; do not submit `record.lifecycle` as an agent or write a one-off script to construct a human Principal. CLI fallback: `skip-codex --workspace <root> --project <id> --update-goals '<JSON>'`. No keyword rephrasing is required. Original input and scope interpretation are distinct: the agent remains responsible for following the user's meaning and restrictions. Other hosts use their native `goal.transition` action; a missing verified host path is not missing user approval.
 
 A STALE result requires rereading the changed goal before retrying. State_version prevents lifecycle-only races even when content revision is unchanged. The batch is atomic. Its receipt changes goal state only; it does not complete work checks, declare deployment successful, authorize execution or erase remaining evidence.
-
 
 ## Incremental context maintenance
 

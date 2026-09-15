@@ -6,88 +6,142 @@
 
 For material changes, the current skill follows this general path:
 
-1. Preserve the goal, requested stage, scope, non-goals, project identity, and selected context.
-2. Inspect current repository behavior and affected paths.
-3. Separate facts, assumptions, gaps, product decisions, and design choices.
-4. Resolve genuine product decisions with the user.
-5. Draft requirements and observable acceptance criteria.
-6. Request explicit product approval.
-7. Design the implementation and relevant failure/recovery behavior.
-8. Re-check repository reality and request design approval.
-9. Create executable tasks from approved design.
-10. Implement only within the approved scope.
-11. Run proportionate verification.
-12. Refresh affected `NOW` state only after verified success.
+1. Capture the actual current user request and its verified origin when the host supports it.
+2. Identify or create the exact goal without inventing one from repository state or conversation memory.
+3. Read fresh bounded context for that goal.
+4. Inspect current repository behavior and affected paths.
+5. Separate facts, assumptions, gaps, product decisions, and design choices.
+6. Resolve genuine PRODUCT decisions with the user.
+7. Draft requirements and observable acceptance criteria.
+8. Design the implementation and relevant failure/recovery behavior.
+9. Create executable work items linked to exact requirement/plan/decision revisions.
+10. Begin material execution only through the current host's verified authority path.
+11. Run proportionate verification and record evidence against exact source/work references.
+12. Report result / checks / remaining work while preserving FAIL, NOT_RUN, STALE, BLOCKED, incomplete context, and unresolved gaps.
 
-Narrow, reversible changes may use a compact flow.
+Narrow, reversible changes may use a compact flow. Material business rules, permissions, inventory, money, persisted data, recovery, and external-state changes require proportionate risk, design, and verification.
 
-## Implemented components
+## Runtime model
 
 | Component | Current behavior | Boundary |
 |---|---|---|
-| Skill | FACT / PRODUCT / DESIGN, approval-aware planning and proportional verification | Instructions guide the agent; they do not intercept host writes |
-| `resolve`, `goals`, `select` | Project identity, bounded deterministic goal matching, record filters | No automatic widening on ambiguity or no match |
-| `context` | Stage-specific Context Pack with required expansions and effective rules | Records are routing context, not independent proof of live behavior |
-| `setup` and `./skip` | Core rule toggles and user-authored project rules, including scoped rules in the backend | Explicit preview/apply; terminal UI needs a TTY |
-| Decision Runtime | Goal-local ledger, approval digests, inbox, lifecycle, independent action gates | Legacy goals are not auto-initialized; `implement=ALLOW` does not allow deployment |
-| `prepare` | Request depth, selected document context, current authorization, source snapshot and next action | Read-only coordination; `prepared` is not permission or completion |
-| `report` | `workflow-result/v1` as brief/detail/JSON, preserving unresolved evidence | Supplied evidence is rendered, not executed or independently verified |
-| Session cache | Optional host-owned cache of document parsing fragments | No cached authority, conversation, source verification or runtime evidence; ordinary CLI is uncached |
-| Paseo plugin | SKIP Records panel, invocation/record attachment sources, exact-record attachment and Decision Inbox | Source in `plugins/paseo`; requires a separately configured Paseo daemon; no write interception |
+| **Skill instructions** | FACT / PRODUCT / DESIGN separation, continuity rules, proportional workflow and reporting | Instructions guide the agent; they do not physically intercept host writes |
+| **Shared SQLite Core** | One source of truth for business records, revisions, relationships, provenance, authority state and evidence | No parallel Markdown/JSON/YAML runtime business store |
+| **Typed immutable revisions** | Goals, decisions, requirements, plans and work use exact revision-qualified relationships | Publishing/sealing content is not itself human approval |
+| **Bounded context queries** | Retrieve goal/stage-specific records, selections, failures, guidance and current facts within explicit budgets | Incomplete packs must not be treated as complete knowledge |
+| **Entry/provenance** | Native adapters can bind the actual current host turn to an input/request/interpretation | Unsupported hosts may read/propose but cannot fabricate verified user provenance |
+| **Execution authority** | Re-checks current request, source snapshot, policy, risk and exact record revisions before material execution | Planning approval does not imply implementation or deployment approval |
+| **Evidence and assurance** | Records PASS/FAIL/NOT_RUN, environment/boundary evidence, failure attempts, guidance and assurance obligations | Agent-reported evidence is not upgraded to a host observation |
+| **MCP** | Exposes the same Core through read/write/query tools and decision UI resources | Generic MCP access does not authenticate a human approval or verified user turn |
+| **Native adapters / UI** | Codex and Paseo integrations connect current host/session/UI context to the shared Core | Live host/workspace/agent/thread handles remain ephemeral and adapter-owned |
 
-### Workflow preparation and reports
+## Continuity across sessions and agents
 
-Run from this repository. Replace `PROJECT` and `GOAL` with an existing external record project and goal:
+SKIP treats the conversation as a disposable working context, not long-term project storage.
 
-```bash
-python3 scripts/intent_context.py prepare --project PROJECT --goal GOAL \
-  --stage design --request-file - <<'JSON'
-{
-  "schema": "workflow-request/v1",
-  "requested_operation": "plan",
-  "requested_depth": "auto",
-  "scope": {
-    "behavior_change": "unknown",
-    "risk_flags": ["unknown"],
-    "evidence_refs": []
-  }
-}
-JSON
+```text
+Session A ─┐
+Session B ─┼──→ shared SQLite Core ──→ bounded context ──→ current agent
+Agent C   ─┘
 ```
 
-A plan request stays a plan. `answer / compact / full` controls workflow depth, while current gates and source checks control the suggested action. An unchanged valid approval is reused; a stale target digest is not treated as equivalent by the model. `document_readiness=READY` may coexist with `authorization.status=BLOCKED`.
+Durable records preserve the information that a fresh session cannot safely reconstruct from source code alone: product intent, decision rationale, selected options, requirements, rejected or superseded records, plans, work, failures, evidence, and unresolved gaps.
 
-```bash
-python3 scripts/intent_context.py report --result-file - --format brief <<'JSON'
-{
-  "schema": "workflow-result/v1",
-  "requested_outcome": "Inspect a proposed change",
-  "outcome_status": "not_run",
-  "changes": [],
-  "evidence": [{"surface": "source", "status": "NOT_RUN"}],
-  "authorization": {"status": "NOT_REQUIRED", "reasons": []},
-  "gaps": ["Source inspection has not run"],
-  "next_decision": null
-}
-JSON
+The goal is not to replay every historical token. Context queries select only the records relevant to the current goal/stage, and the skill expands incomplete results when omitted information matters.
+
+Historical context is also not treated as live truth. A retrieved decision can still be valid while an old repository observation is stale. Current source, selections, policy, evidence, and execution basis are re-checked where required.
+
+## Entry, interpretation, and authority
+
+A user sentence, a saved request, a selected record, and an execution authorization are different things.
+
+Native entry captures the actual host input before materialization. The agent may propose a structured interpretation tied to exact instruction spans and targets, but parser suggestions and agent-written JSON never create human authority.
+
+```text
+actual host input
+      ↓
+verified input envelope
+      ↓
+agent interpretation
+      ↓
+goal / records / work
+      ↓
+current execution checks
+      ↓
+material action
 ```
 
-The default summary presents the result, checks and remaining work. The bundled CLI labels are Korean; agent responses follow the conversation language. Relevant `FAIL`, `NOT_RUN`, `STALE`, `BLOCKED` and `EVIDENCE_PENDING` stay visible. Full selection and provenance are available in structured/detail output.
+Reading a record or attaching it to a composer is context only. A plan request stays a plan. A later implementation request may authorize previously prepared work, but the execution path re-checks exact work, source and policy state rather than rewriting history to manufacture permission.
 
-See the [workflow contract](../../references/workflow-runtime-contract.md) for request/result schemas, exit codes, source fingerprint coverage and the Python host cache API. `prepare` and `report` do not change source files, record approvals or perform deployment.
+Unknown delivery is not automatically retried into another session. Plans and durable records are portable; live routing handles are not.
 
-### CLI entry points
+## Core queries and entry points
 
-`$skip` is an agent skill invocation. `./skip` is the terminal entry point. They are different interfaces:
+Prefer connected MCP tools during normal agent use. Representative tools include:
 
-```bash
-./skip --project PROJECT                    # Interactive rule setup; requires a TTY
-./skip "Investigate the order workflow"     # Emits skip.invoke/v1 for a provider adapter
-python3 scripts/intent_context.py --help    # Deterministic backend commands
+```text
+skip_status
+skip_context
+skip_decisions
+skip_submit
+skip_amend
+skip_result
+skip_learning
+skip_execution_status
 ```
 
-The natural-language terminal form emits a request envelope; it does not start an agent. No global `skip` command is installed by cloning this repository.
+The installed local launcher can query the same Core:
 
-## Remaining integration work
+```bash
+skip --workspace <project-root> query status
+```
 
-Project rules, Context Pack compilation, workflow preparation, and the Paseo plugin source are included. Cloning this repository does not install or reload that plugin. Other IDE adapters, `prepare/report` integration into the plugin UI, and host write/deploy interception remain separate work. No `host-enforced` adapter is bundled.
+Source-development fallback uses the module CLI:
+
+```bash
+python -m skip_core.cli --project <project-id> query context --input '{"goal_id":"<goal-id>"}'
+```
+
+The Codex native adapter provides current-turn provenance and current-execution entry when available:
+
+```bash
+python -m adapters.codex.entry --workspace <project-root> --project <project-id> --goal <goal-id>
+```
+
+Do not use retired `scripts/intent_context.py` or file-based runtime writers after deployment. The authoritative command and schema behavior lives in [the Core contract](../../references/db-core-contract.md).
+
+## Storage and revision model
+
+SQLite is the sole runtime business-record store. The Core uses immutable/sealed revisions, exact foreign-key relationships, transactional commands, CAS/idempotency, bounded queries, and explicit schema upgrades.
+
+A changed decision, requirement, plan, source basis, or policy does not silently inherit authority from an older revision. Current projections expose selection and staleness state rather than asking the model to infer them from record order.
+
+Imported historical records may preserve original text and relationships, but historical status does not become current approval or verification. Old file-runtime material remains recovery/regression provenance, not a second live writer.
+
+## Failure learning and verification
+
+Routine FAIL evidence remains evidence. Significant failures may additionally create typed failure/attempt records and later guidance. Assurance queries connect relevant environments, scenarios, obligations, evidence, and exceptions so a passing result in one boundary is not silently generalized to another.
+
+Examples of deliberately separate boundaries include:
+
+- unit/integration test vs packaged runtime,
+- mock DB vs real database competition,
+- VM vs physical hardware,
+- agent report vs host observation,
+- implementation completion vs deployment acceptance.
+
+Current-source verification is therefore part of continuity: memory can explain why the project reached a state, but memory alone does not prove that the state still exists.
+
+## Integration and enforcement boundaries
+
+The current Core and MCP are implemented in development, including bounded queries, immutable revisions, transactional commands, backup/restore, official MCP SDK integration, current-turn Codex provenance, and the Paseo current-agent/decision surfaces.
+
+Important boundaries remain:
+
+- Enforcement is **advisory**; SKIP does not intercept arbitrary host writes or provide same-OS-user privilege isolation.
+- Generic MCP support alone does not authenticate human approval or start a verified agent turn.
+- Hosts without exact-message receipt lookup cannot automatically resolve uncertain delivery.
+- The Paseo public adapter does not provide atomic idle-conditioned sends or confirmed interruption.
+- Automated/package checks do not establish live Windows installer acceptance, live Paseo acceptance, device acceptance, or production acceptance unless those surfaces were actually tested.
+
+See [Shared SQLite Core — development build](db-core.md) and [Verification and limits](verification.md) for the current validation status.

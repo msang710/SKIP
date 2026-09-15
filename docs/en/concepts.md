@@ -35,7 +35,7 @@ The agent designs and implements it
           ↓
 The result is verified
           ↓
-Project memory survives for the next agent
+Project continuity survives for the next session or agent
 ```
 
 ## What you can skip — and what you cannot
@@ -54,9 +54,7 @@ Known risks and blockers        → NEVER SKIP
 Verification result             → NEVER SKIP
 ```
 
-The point is not to remove the human from development.
-
-The point is to move the human to the layer where human judgment is actually valuable.
+The point is not to remove the human from development. It is to move human attention to the layer where human judgment is actually valuable.
 
 ## You still need to know what you want
 
@@ -99,7 +97,7 @@ FACT / PRODUCT / DESIGN separation
     ↓
 Unresolved PRODUCT decisions return to the human
     ↓
-Approval
+Decision
     ↓
 Design
     ↓
@@ -108,44 +106,58 @@ Implementation
 Verification
 ```
 
-The coding agent may decide *how* to implement an approved result.
+The coding agent may decide *how* to implement an approved result. It may not silently decide *what result the user should get*.
 
-It may not silently decide *what result the user should get*.
-
-### 2. Session amnesia
+### 2. Session amnesia and lost causal history
 
 A long-running project should not depend on one chat window remembering everything.
 
-A fresh conversation may contain the same model and the same repository, yet it does not automatically inherit every decision, correction, rejected alternative, implementation checkpoint, or piece of context from the previous session. Switching to another coding agent makes that boundary even more obvious.
+A fresh conversation may contain the same model and the same repository, yet it does not automatically inherit every decision, correction, rejected alternative, failed attempt, implementation checkpoint, or reason from the previous session. Switching to another coding agent makes that boundary even more obvious.
 
 > **A new chat is a new coworker. The project should not have to start over.**
 
-SKIP therefore treats useful project memory as something that belongs **outside the conversation**.
+SKIP therefore treats useful project memory as durable project state outside the conversation.
 
 ```text
 Session A ─┐
-Session B ─┼──→ records / decisions / NOW ──→ bounded selection ──→ current agent
+Session B ─┼──→ shared SQLite Core ──→ bounded context ──→ current agent
 Agent C   ─┘
 ```
 
-The goal is not to preserve an AI personality.
-
-The goal is to preserve the **project's continuity** across disposable sessions and interchangeable agents.
+The goal is not to preserve an AI personality or replay every historical token. The goal is to preserve **project continuity and the causal context behind important decisions** across disposable sessions and interchangeable agents.
 
 ### 3. Context dumping
 
-Keeping memory is not enough. Giving every historical document to every session creates a different failure:
+Keeping memory is not enough. Giving every historical record to every session creates a different failure:
 
 > Too little history → the agent forgets why the system exists.
 > Too much history → context becomes expensive, noisy, stale, and contradictory.
 
-SKIP stores history separately and selects only the records needed for the current task.
+SKIP stores durable state in the shared Core and uses bounded queries to retrieve only the records relevant to the current goal and stage. If a context pack is incomplete, the agent must expand the named missing information rather than assume it does not exist.
 
-### 4. Human attention spent at the wrong layer
+### 4. Stale memory becoming mythology
+
+Retrieved history is context, not automatic truth.
+
+A decision may still explain *why* the project reached its current shape while an old source observation, test result, environment claim, or implementation fact has gone stale. SKIP therefore keeps historical rationale and current evidence distinct.
+
+```text
+Historical decisions and failures
+              +
+      current Core state
+              +
+ current source / evidence checks
+              ↓
+       current conclusion
+```
+
+A remembered endpoint, source path, PASS result, or implementation claim is not treated as current merely because retrieval succeeded.
+
+### 5. Human attention spent at the wrong layer
 
 If a non-developer has to read every generated design document or every changed source file, the workflow has failed to create useful abstraction.
 
-SKIP keeps detailed evidence for the agent while reducing human review to the decisions, claims, risks, and outcomes that actually need human judgment.
+SKIP keeps detailed evidence and technical relationships available to the agent while reducing human review to decisions, claims, risks, and outcomes that actually need human judgment.
 
 ## FACT, PRODUCT, DESIGN
 
@@ -173,25 +185,13 @@ Examples include file and component boundaries, APIs, schemas, algorithms, migra
 
 These decisions normally belong to the agent when they preserve the approved outcome.
 
-## Approval is not documentation theater
+## Records are not documentation theater
 
-SKIP can generate:
+The current runtime stores business state in one SQLite Core rather than a parallel set of Markdown/YAML workflow files.
 
-```text
-impact.md
-prd.md
-user_stories.md
-system_design.md
-tasks.md
-```
+Goals, decisions, selections, requirements, plans, work items, evidence, failures, guidance, provenance, and lifecycle state use typed, revision-qualified relationships. Sealed revisions remain history instead of being silently overwritten.
 
-You can read all of them.
-
-You usually do not need to.
-
-Their primary job is to give the next reasoning step — and the next session — enough structured context to avoid rediscovering, forgetting, or mutating earlier decisions.
-
-A human-facing review should instead look closer to this:
+A human-facing review can stay compact:
 
 ```text
 What changes
@@ -210,53 +210,30 @@ Verification
 - PASS: allocation and cancellation regression tests
 ```
 
+The detailed relationships exist so the next reasoning step — and the next session — can recover what matters without asking the human to operate a documentation system.
+
 **Read the decisions. Skip the implementation details.**
 
 ## Long-term project memory
 
-Historical records answer:
+Different record classes answer different questions:
 
-> Why did we make this decision?
+- goal and PRODUCT records: what are we trying to achieve and what did the human decide?
+- plan/work relationships: how is that decision intended to become implementation?
+- failure and learning records: what went wrong, what was tried, and under what conditions does that lesson apply?
+- evidence/current facts: what has actually been observed for the current source and environment?
 
-`NOW` answers:
+The Core exposes bounded context for an explicit goal and stage. It does not silently widen an empty or ambiguous result into "read everything".
 
-> What is currently implemented?
+Fresh sessions should read the current goal context rather than infer state from conversation memory. Historical imports remain historical; retrieving them does not create a new approval, selection, or verification result.
 
-The current implementation supports bounded selection by project, date, goal, artifact, decision, and current-state view.
+## Approval and authority are not the same as stored text
 
-```text
-$skip --now
-$skip --260825
-$skip --goal stock-allocation
-$skip --focus decisions
-$skip --setup
-```
+Publishing a record, retrieving a context pack, attaching a saved request, or receiving a model-written proposal does not create human execution authority.
 
-Selection is fail-closed: an empty result is not silently widened into "read everything".
+Current host adapters may bind the actual user turn or native UI action to a request. Material execution then re-checks the exact work, relevant record revisions, policy, risk, source snapshot, and current instruction basis.
 
-`--setup` shows the ten default collaboration rules and project-specific rules. It previews an exact change before anything is stored; only explicit approval may apply it.
-
-The deterministic selection logic lives in `scripts/intent_context.py` rather than being improvised by the model on every run.
-
-### `NOW` is useful — but it is not truth
-
-`NOW` is a compact, replaceable routing view of verified current implementation state.
-
-It is intentionally **not** treated as independent proof.
-
-If a claim matters to the current task, SKIP re-checks the repository, tests, schemas, configuration, or observed execution before trusting it.
-
-```text
-Historical records
-        ↓
-       NOW
-        ↓
-bounded context selection
-        ↓
-current repository verification
-```
-
-Memory should survive sessions without becoming mythology.
+This separation matters because a system that preserves memory must not let old memory impersonate a new instruction.
 
 ## Cost model
 
@@ -276,15 +253,13 @@ SKIP does **not** increase the underlying agent's physical reasoning capacity, c
 
 A smaller or weaker model can still make incorrect inferences while following SKIP. The workflow itself also consumes context for investigation, records, decisions, design, and verification, so SKIP can sometimes push an agent closer to its context limit rather than farther away from it.
 
-SKIP does not remove those limits.
-
-What it can do is put boundaries around their consequences.
+What it can do is put boundaries around the consequences.
 
 > **The goal is to stop a model limitation before it becomes unverified code or reaches a running service.**
 
-Repository evidence, explicit uncertainty, approval gates, and verification exist so questionable reasoning has places to stop before it becomes an authorized implementation or operational change.
+Repository evidence, explicit uncertainty, human decision boundaries, execution checks, and verification exist so questionable reasoning has places to stop before it becomes an authorized implementation or operational change.
 
-If the agent cannot establish sufficient evidence within its reasoning or context limits, the correct outcome is to stop with a named gap or `EVIDENCE_PENDING` — not to manufacture confidence.
+SKIP also remains advisory: it does not physically intercept arbitrary writes by the host agent or provide same-OS-user privilege isolation.
 
 ## Who this is for
 
@@ -294,7 +269,7 @@ SKIP is especially useful for:
 - operators and analysts automating business processes,
 - non-traditional developers working with coding agents,
 - solo builders who can define desired behavior more easily than architecture,
-- long-running projects where intent and decisions need to survive beyond one conversation or one agent.
+- long-running projects where intent, rationale, failures, and evidence need to survive beyond one conversation or one agent.
 
 ## Who this is not for
 
@@ -302,9 +277,7 @@ If you can already say:
 
 > Change this object, replace this interface, add this migration, and update these callers.
 
-then SKIP may feel unnecessarily slow.
-
-You already possess the implementation-level map that SKIP spends time reconstructing and validating. Direct coding-agent instructions may be faster and cheaper.
+then SKIP may feel unnecessarily slow for many tasks. Direct coding-agent instructions can be faster for small, self-contained work whose context is already complete.
 
 ## Philosophy
 

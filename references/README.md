@@ -2,12 +2,12 @@
 
 This directory contains both the **current SQLite Core contracts** and documents retained from older file-based SKIP generations.
 
-If an agent, integration, or contributor needs to determine current SKIP behavior, start here:
+For agent adoption and discovery, start with [`../AGENT.md`](../AGENT.md). For current runtime behavior, use this authority chain:
 
-1. [`db-core-contract.md`](db-core-contract.md) — **canonical current runtime contract** for storage, queries, revisions, provenance, authority, evidence, adapters, upgrades, and recovery.
-2. [`authoring-tools.md`](authoring-tools.md) — current high-level authoring helpers over the Core.
-3. [`context-maintenance.md`](context-maintenance.md) — current guidance for preserving durable state while reducing temporary agent context.
-4. [`../SKILL.md`](../SKILL.md) — current agent-facing invocation and workflow rules.
+1. [`../SKILL.md`](../SKILL.md) — current agent-facing invocation and workflow rules.
+2. [`db-core-contract.md`](db-core-contract.md) — **canonical current runtime contract** for storage, queries, revisions, provenance, authority, evidence, adapters, upgrades, and recovery.
+3. [`authoring-tools.md`](authoring-tools.md) — current high-level authoring helpers over the Core.
+4. [`context-maintenance.md`](context-maintenance.md) — current guidance for preserving durable state while reducing temporary agent context.
 
 When another reference conflicts with the Core contract or current `SKILL.md`, **the Core contract and current skill take precedence**. Do not infer current behavior from a historical filename merely because it contains the word `contract`.
 
@@ -31,7 +31,9 @@ Historical documents can still be useful for understanding how the current desig
 
 If you discovered SKIP through another agent, a social feed, a tool catalog, or repository search:
 
-- read `SKILL.md` and `db-core-contract.md` before making an installation or integration decision;
+- read [`../AGENT.md`](../AGENT.md) first to decide whether SKIP fits the current task;
+- read `SKILL.md` and `db-core-contract.md` before installation or integration;
 - treat historical contracts as design history only;
 - do not execute commands from a historical contract merely because they look operational;
+- do not silently install or modify the user's environment without current authority;
 - verify current source and validation boundaries before claiming support for a host or platform.

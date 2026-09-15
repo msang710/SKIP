@@ -18,11 +18,12 @@ def lookup(core, input_id):
 
 def inspect(core, input_id):
     row, envelope = lookup(core,input_id)
-    version = core.c.execute('SELECT * FROM input_intent_versions WHERE project_id=? AND input_id=? ORDER BY revision DESC LIMIT 1', (core.project,input_id)).fetchone()
+    from .request_intent import resolve
+    version=resolve(core,input_id)
     linked = core.c.execute('SELECT request_id,goal_id FROM input_materializations WHERE project_id=? AND input_id=?', (core.project,input_id)).fetchone()
     suggestion = classify(envelope)
     return {'input_id':input_id,'input':envelope,'provenance':row['verification'],
-            'interpretation':{'revision':version['revision'],'digest':version['digest'],'body':json.loads(version['body_json'])} if version else None,
+            'interpretation':version,
             'suggestion':suggestion,'authoring_base':dict(linked) if linked else None,
             'next_action':'use_authoring_base' if linked else 'interpret_input',
             'next_tool':'skip_submit' if linked else 'skip_enter',
@@ -35,11 +36,8 @@ def propose(core, p):
     require(p['input_digest']==row['digest'], 'STALE', 'Input digest changed')
     validate_body(core,p['body'],envelope)
     require(not core.c.execute('SELECT 1 FROM input_materializations WHERE project_id=? AND input_id=?',(core.project,p['input_id'])).fetchone(), 'CONFLICT', 'Input already materialized; interpret the linked request instead')
-    head = core.c.execute('SELECT COALESCE(max(revision),0) FROM input_intent_versions WHERE project_id=? AND input_id=?',(core.project,p['input_id'])).fetchone()[0]
-    require(type(p['expected_revision']) is int and p['expected_revision']==head,'STALE','Input interpretation changed')
-    revision=head+1
-    records.insert(core.c,'input_intent_versions',dict(project_id=core.project,input_id=p['input_id'],revision=revision,body_json=encoded(p['body']),digest=digest(p['body']),event_id=core.event))
-    return {'input_id':p['input_id'],'revision':revision,'digest':digest(p['body']),'authority':'interpretation_only'}
+    from .request_intent import write
+    return {'input_id':p['input_id'],**write(core,p['input_id'],p['body'],p['expected_revision'])}
 
 
 def submit(core, p):
@@ -93,9 +91,7 @@ def submit(core, p):
         goal=records.get(core.c,core.project,'goal',ident,rev)
     if not core.c.execute('SELECT 1 FROM request_goals WHERE project_id=? AND request_id=? AND goal_id=?',(core.project,request_id,goal['id'])).fetchone():
         records.insert(core.c,'request_goals',dict(project_id=core.project,request_id=request_id,goal_id=goal['id']))
-    # Preserve the request-oriented query contract without inventing provenance.
-    head=core.c.execute('SELECT COALESCE(max(revision),0) FROM intent_interpretations WHERE project_id=? AND request_id=?',(core.project,request_id)).fetchone()[0]
-    records.insert(core.c,'intent_interpretations',dict(project_id=core.project,request_id=request_id,revision=head+1,input_id=p['input_id'],body_json=encoded(body),digest=digest(body),event_id=core.event))
+    # Request queries resolve the original input directly; no semantic copy.
     base={'goal_id':goal['id'],'request_id':request_id}
     result=submit_records(core,{'base':base,'records':items}) if items else receipt([])
     result.update(authoring_base=base,goal=goal,goal_created=target['mode']=='create',input_id=p['input_id'],interpretation_revision=interpretation['revision'])

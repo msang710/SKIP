@@ -33,7 +33,7 @@ class Delivery:
             a=c.one('authorizations',x['authorization_id'])
             require(not c.c.execute('SELECT 1 FROM authorization_revocations WHERE project_id=? AND authorization_id=?',(c.project,a['id'])).fetchone(),
                     'STALE','Execution permission was revoked')
-            b=basis(c,x['work_item_id'],x['work_revision'])
+            b=basis(c,x['work_item_id'],x['work_revision'],request_id=a['request_id'])
             risks,saved=risk_basis(c,{'goal_risk_id':a['goal_risk_id'],'change_risk_id':a['change_risk_id']},b)
             require(digest({'basis':b,'snapshot':saved['digest'],'risks':[r['digest'] for r in risks]})==a['basis_digest'],
                     'STALE','Execution basis changed')

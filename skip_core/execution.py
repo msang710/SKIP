@@ -23,7 +23,7 @@ def current_selection(core, ident):
     return row
 
 
-def basis(core, work_id, revision):
+def basis(core, work_id, revision, *, request_id=None):
     """Walk explicit links, checking heads. No document text is parsed for authority."""
     work=records.get(core.c,core.project,'work_item',work_id,revision)
     require(work['current_revision']==revision and work['lifecycle']=='active','STALE','Work changed')
@@ -91,14 +91,21 @@ def basis(core, work_id, revision):
             require(row is not None and row['result']=='PASS' and row['verdict']=='PASS','EXECUTION_ACTIVE','Dependency verification is incomplete')
             verify_snapshot(core,row['snapshot_id'])
     from .entry_runtime import inspect,assess
-    entry=inspect(core,{'request_id':work['fields']['request_id']})
+    # Record provenance and the request authorizing this execution are distinct.
+    authority_request=request_id or work['fields']['request_id']
+    entry=inspect(core,{'request_id':authority_request})
     stage=None
     if entry['interpretation']:
-        stage=assess(core,{'request_id':work['fields']['request_id'],'goal_id':goal['id']})
+        stage=assess(core,{'request_id':authority_request,'goal_id':goal['id']})
         require(not stage['reasons'],'STALE','Request interpretation needs review')
         require(work['fields']['operation'] not in stage['constraints'],'USER_ACTION_REQUIRED','Requested operation is prohibited')
         require(not (work['fields']['operation']=='design' and 'design_change' in stage['constraints']),'USER_ACTION_REQUIRED','Design changes prohibited')
-    return {'goal':goal,'work':work,'records':list(refs.values()),'selections':list(selections.values()),'policy_digest':core.policy_digest(),'entry_basis':stage}
+    from .request_intent import request as resolve_request,authorize
+    semantic=resolve_request(core,authority_request)
+    identity=core.context.identity if core.context else ()
+    thread=identity[1] if len(identity)>1 and identity[0]=='codex' else None
+    execution_intent=authorize(core,work,semantic,thread=thread) if semantic else None
+    return {'goal':goal,'work':work,'records':list(refs.values()),'selections':list(selections.values()),'policy_digest':core.policy_digest(),'entry_basis':stage,'execution_intent':execution_intent}
 
 
 
@@ -123,6 +130,11 @@ def risk_basis(core,p,b):
         require(all(r['level']=='low' for r in risks) or b['work']['fields']['workflow_depth']=='full',
                 'USER_ACTION_REQUIRED','Material failure cost requires full design')
     saved=verify_snapshot(core,risks[0]['snapshot_id'])
+    intent=b.get('execution_intent')
+    if intent:
+        for source in [intent['current'],*intent['anchors']]:
+            if source.get('proposal'):
+                require(source['proposal']['scope_digest']==saved['digest'],'STALE','Approved proposal scope changed')
     from .learning_runtime import preflight
     b['learning']=preflight(core,b,saved['id'])
     return risks,saved
@@ -141,7 +153,21 @@ def prepare(core,p,*,current=False):
     require(core.principal.origin==core.context.context_id,'PROJECT_MISMATCH','User action belongs to another context')
     if p.get('selection'):
         core._decision_select(p['selection'])
-    b=basis(core,p['work_id'],p['revision'])
+    work=records.get(core.c,core.project,'work_item',p['work_id'],p['revision'])
+    op=work['fields']['operation']
+    request_op='plan' if op in ('requirements','design','tasks') else 'investigate' if op=='validate' else op
+    # Current-turn authority is checked by the native adapter, not the
+    # convenience operation previously assigned to the same user text.
+    existing=core.c.execute('SELECT id,intent FROM requests WHERE project_id=? AND interaction_id=?',
+                            (core.project,core.interaction)).fetchone() if current else None
+    if existing:
+        require(existing['intent']==core.principal.user_text,'CONFLICT','User request changed')
+        request=existing['id']
+    else:
+        request=core.new_request(core.principal.user_text,request_op)
+    if not core.c.execute('SELECT 1 FROM request_goals WHERE project_id=? AND request_id=? AND goal_id=?',(core.project,request,work['goal_id'])).fetchone():
+        records.insert(core.c,'request_goals',dict(project_id=core.project,request_id=request,goal_id=work['goal_id']))
+    b=basis(core,p['work_id'],p['revision'],request_id=request)
     risks,saved=risk_basis(core,p,b)
     response=core.c.execute('SELECT p.body_json FROM response_bindings r JOIN action_proposals p ON p.project_id=r.project_id AND p.id=r.proposal_id AND p.revision=r.proposal_revision WHERE r.project_id=? AND r.input_id=?',(core.project,core.interaction)).fetchone()
     if response:
@@ -157,19 +183,6 @@ def prepare(core,p,*,current=False):
         require(other['work_item_id']!=p['work_id'],'EXECUTION_ACTIVE','This work already has an unresolved execution')
         require(not any(scope_overlap(a,z) for a in proposed_paths for z in paths(core,other['scope_id'])),
                 'EXECUTION_ACTIVE','Another active work overlaps this source scope')
-    op=b['work']['fields']['operation']
-    request_op='plan' if op in ('requirements','design','tasks') else 'investigate' if op=='validate' else op
-    # Current-turn authority is checked by the native adapter, not the
-    # convenience operation previously assigned to the same user text.
-    existing=core.c.execute('SELECT id,intent FROM requests WHERE project_id=? AND interaction_id=?',
-                            (core.project,core.interaction)).fetchone() if current else None
-    if existing:
-        require(existing['intent']==core.principal.user_text,'CONFLICT','User request changed')
-        request=existing['id']
-    else:
-        request=core.new_request(core.principal.user_text,request_op)
-    if not core.c.execute('SELECT 1 FROM request_goals WHERE project_id=? AND request_id=? AND goal_id=?',(core.project,request,b['goal']['id'])).fetchone():
-        records.insert(core.c,'request_goals',dict(project_id=core.project,request_id=request,goal_id=b['goal']['id']))
     auth=uid(); authority_basis=digest({'basis':b,'snapshot':saved['digest'],'risks':[r['digest'] for r in risks]})
     records.insert(core.c,'authorizations',dict(project_id=core.project,id=auth,request_id=request,interaction_id=core.interaction,
         action=op,scope_id=saved['scope_id'],snapshot_id=saved['id'],goal_risk_id=risks[0]['id'],change_risk_id=risks[1]['id'],

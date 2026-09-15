@@ -18,9 +18,10 @@ const dispose=server.default({handle(contract,fn){assert(!handlers.has(contract.
 assert.equal(handlers.size,5);
 assert.throws(()=>handlers.get('skip.core.close')({sessionId:'missing',uiInstanceId:'ui',workspaceId:'w'}),{code:'CONTEXT_EXPIRED'});
 dispose();dispose();
-const panels=[],sources=[],commands=[];
+const panels=[],sources=[],commands=[],surfaces=[],sidebar=[];
 const client=(0,eval)(result.clientBundle)(name=>name==='react-native'||name==='@getpaseo/plugin/client'?{}:require(name));
-const cleanup=client.default({addAttachmentSource:s=>sources.push(s),addWorkspacePanel:p=>panels.push(p),addCommandCenterItem:c=>commands.push(c)});
+const cleanup=client.default({addSurface:(id,Component)=>surfaces.push({id,Component}),addSidebarItem:item=>sidebar.push(item),addAttachmentSource:s=>sources.push(s),addWorkspacePanel:p=>panels.push(p),addCommandCenterItem:c=>commands.push(c)});
 assert.deepEqual(panels.map(p=>p.context),['workspace','agent']);assert.equal(sources.length,1);assert.equal(commands.length,2);
+assert.equal(surfaces.length,0);assert.equal(sidebar.length,0);
 cleanup();cleanup();
 console.log(JSON.stringify({paseo:pkg.version,clientBytes:result.clientBundle.length,serverBytes:result.serverBundle.length,rpcHandlers:handlers.size,panels:panels.length,attachmentSources:sources.length,cleanup:'idempotent'}));

@@ -61,10 +61,9 @@ def propose(core,p):
     for ref in body['targets']:
         r=records.get(core.c,core.project,ref['kind'],ref['id'],ref['revision'])
         require(core.c.execute('SELECT 1 FROM request_goals WHERE project_id=? AND request_id=? AND goal_id=?',(core.project,p['request_id'],r['goal_id'])).fetchone(),'PROJECT_MISMATCH','Target is outside request goal')
-    head=core.c.execute('SELECT COALESCE(max(revision),0) FROM intent_interpretations WHERE project_id=? AND request_id=?',(core.project,p['request_id'])).fetchone()[0]
-    require(type(p['expected_revision']) is int and head==p['expected_revision'],'STALE','Interpretation changed')
-    records.insert(core.c,'intent_interpretations',dict(project_id=core.project,request_id=p['request_id'],revision=head+1,input_id=request['interaction_id'],body_json=encoded(body),digest=digest(body),event_id=core.event))
-    return {'request_id':p['request_id'],'revision':head+1,'digest':digest(body),'authority':'interpretation_only'}
+    from .request_intent import write
+    return {'request_id':p['request_id'],**write(core,request['interaction_id'],body,p['expected_revision'],request_id=p['request_id'])}
+
 
 def inspect(core,p):
     require(('request_id' in p) != ('input_id' in p),'INVALID_INPUT','Specify exactly one request_id or input_id')
@@ -72,8 +71,9 @@ def inspect(core,p):
         from .input_authoring import inspect as input_inspect
         return input_inspect(core,p['input_id'])
     request,envelope=input_for(core,p['request_id'])
-    row=core.c.execute('SELECT * FROM intent_interpretations WHERE project_id=? AND request_id=? ORDER BY revision DESC LIMIT 1',(core.project,p['request_id'])).fetchone()
-    return {'request_id':request['id'],'input':envelope,'provenance':'verified' if envelope else 'legacy_unknown','interpretation':{'revision':row['revision'],'digest':row['digest'],'body':json.loads(row['body_json'])} if row else None,'authority':'reading_material'}
+    from .request_intent import resolve
+    return {'request_id':request['id'],'input':envelope,'provenance':'verified' if envelope else 'legacy_unknown','interpretation':resolve(core,request['interaction_id']),'authority':'reading_material'}
+
 
 def assess(core,p):
     entry=inspect(core,p);interpretation=entry['interpretation'];goals=[r[0] for r in core.c.execute('SELECT goal_id FROM request_goals WHERE project_id=? AND request_id=?',(core.project,p['request_id']))]

@@ -39,7 +39,7 @@ class SemanticExecutionTests(unittest.TestCase):
  def test_resume_requires_original_native_request(self):
   self.save(acts=['resume'])
   with self.assertRaises(CoreError) as e:self.begin()
-  self.assertEqual(e.exception.code,'USER_ACTION_REQUIRED')
+  self.assertEqual(e.exception.code,'INTERPRETATION_REQUIRED')
  def test_finish_is_reporting_but_cannot_cross_conversations(self):
   self.save();x=self.begin()['data']['execution_id'];self.user={'id':'stop','text':'그만해'}
   with self.assertRaises(CoreError):run(self.f.root,self.f.root,'other-thread',self.f.db.path,project_id='project',finish=x)

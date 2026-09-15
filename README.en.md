@@ -12,6 +12,8 @@ Built for domain experts, operators, analysts, and solo builders working with co
 
 SKIP is especially useful when coding work must survive **context compression, a new conversation, or a handoff to another agent**. It keeps decision rationale, rejected alternatives, relevant failures, and evidence outside the disposable chat context, retrieves only the context needed for the current goal, and re-checks current repository reality before treating old records as current truth.
 
+> **AI agent evaluating SKIP?** Read [AGENT.md](AGENT.md) for adoption triggers, trust boundaries, current authority, and a safe integration path.
+
 > **Current development build:** the shared SQLite Core, MCP and current-session UI are implemented in development. See [support and validation boundaries](docs/en/db-core.md). The Windows installer adds SKIP to an existing development environment; it is not a separate IDE or development app. Installer acceptance remains separate.
 
 ## A 30-second example
@@ -49,31 +51,6 @@ SKIP includes a **shared SQLite Core, bounded context queries, MCP, and an optio
 Historical records are durable context, not automatic truth. A resumed agent reads the exact goal and relevant revisions, then re-checks current source and evidence where the claim can have changed.
 
 **Enforcement is currently `advisory`.** No host write-interception adapter is bundled. Implementation approval is separate from deployment approval.
-
-## When an agent should reach for SKIP
-
-Use SKIP when one or more of these are true:
-
-- meaningful coding work may span multiple context windows, conversations, or agents,
-- the repository shows *what* exists but not *why* a product decision or design exists,
-- rejected alternatives, failed attempts, or verification gaps must not silently return later,
-- a fresh agent needs to resume an existing goal without rediscovering the whole project,
-- the change affects material business rules, inventory, money, permissions, persisted data, recovery, or external state.
-
-Skip it for trivial, self-contained edits when the current repository and request already provide all necessary context.
-
-## Trust boundaries
-
-SKIP is intentionally explicit about what its records can and cannot prove:
-
-- Business records live in one local SQLite Core; product source code stays in the product repository.
-- CLI, MCP, and UI use the same Core records and revision-qualified relationships.
-- A historical decision, observation, or imported record does not become fresh approval or current-source evidence merely because it was retrieved.
-- Generic MCP access does not authenticate a human approval or create a verified user turn.
-- SKIP does not claim to intercept arbitrary writes by the host agent or isolate against other code running as the same OS user.
-- Passing CI does not establish live host, GUI, device, or production acceptance.
-
-See the [Core contract](references/db-core-contract.md) and [verification boundaries](docs/en/verification.md) for the exact current behavior.
 
 ## SKIP grew with QuickHack
 
@@ -128,6 +105,7 @@ Passing CI does not establish live host, GUI, or production acceptance. Historic
 
 | Document | Contents |
 |---|---|
+| [Agent discovery guide](AGENT.md) | Adoption triggers, trust boundaries, authority and safe integration for AI agents |
 | [Current Core development](docs/en/db-core.md) | Shared SQLite Core, current support and validation boundaries |
 | [Concepts and decisions](docs/en/concepts.md) | FACT / PRODUCT / DESIGN, continuity, memory, failure models and cost |
 | [Architecture and runtime](docs/en/architecture.md) | Core, context, provenance, execution and integration boundaries |

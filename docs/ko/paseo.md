@@ -2,34 +2,62 @@
 
 [SKIP](../../README.md) · [철학과 제품 결정](concepts.md) · [구조와 런타임](architecture.md) · [설치와 사용](usage.md) · [검증과 한계](verification.md)
 
-## Paseo 플러그인
+선택적으로 함께 쓰는 Paseo 플러그인은 [`plugins/paseo`](../../plugins/paseo)에 있습니다. 별도의 파일 기록 저장소를 쓰지 않고 CLI/MCP와 같은 SQLite Core에 연결합니다.
 
-함께 사용하는 플러그인 소스는 [`plugins/paseo`](../../plugins/paseo)에 포함되어 있습니다. 기존 설치를 유지하기 위해 manifest ID는 `intent-launcher`를 사용합니다.
+## 제공하는 표면
 
-**SKIP Records** workspace/explorer 패널, **Open SKIP Records** 명령, 호출·기록 첨부 source, 기록 미리보기·정확한 문서 첨부, 목표별 Decision Inbox를 등록합니다. 패널의 직접 첨부 기능이 없으면 `$skip` 호출문으로 대체합니다. SKIP 옵션을 검증하는 호출 파서는 플러그인의 `intent.server.ts`에 들어 있습니다.
+클라이언트는 다음을 등록합니다.
 
-SKIP 저장소 루트에서 의존성과 소스를 확인합니다.
+- workspace용 SKIP 패널,
+- 현재 agent/현재 대화용 SKIP 패널,
+- 현재 상태와 이 대화의 작업을 여는 command-center 항목,
+- SKIP invocation/context 진입용 attachment source,
+- 플러그인 연동에 사용하는 native conversation entry 표면.
 
-```bash
-npm --prefix plugins/paseo ci
-npm --prefix plugins/paseo test
-npm --prefix plugins/paseo run typecheck
+서버는 panel/query/user 동작을 Core bridge로 전달하고, 살아 있는 session/routing 상태는 업무 기록 밖에 유지합니다.
+
+## Core 연결
+
+플러그인은 현재 Core bridge를 다음 형태로 실행합니다.
+
+```text
+python -u -m skip_core.bridge
 ```
 
-포함된 lockfile로 설치한 Node.js 24.18.1 환경에서 플러그인 **18개 테스트**와 `tsc --noEmit`이 통과했습니다. 이는 실제 GUI 동작의 검증과는 별개입니다.
+Core root는 다음 순서로 찾습니다.
 
-신뢰된 플러그인 기능을 켠 daemon에 설치할 때는 다음 경로를 지정합니다.
+1. 명시한 `SKIP_CORE_ROOT`,
+2. `skip_core/bridge.py`가 있는 현재 source checkout,
+3. `<SKIP_DATA_ROOT>/runtime/current` 또는 플랫폼 기본 SKIP 데이터 루트.
+
+`SKIP_PYTHON`으로 bridge 실행 Python을 지정할 수 있습니다. `SKIP_DATA_ROOT`는 Core 데이터 루트를 선택하며, 업무 기록은 다른 SKIP 인터페이스와 같은 SQLite `skip.db`를 사용합니다.
+
+현재 Core 계약에서는 `INTENT_TO_CODE_RECORD_ROOT`, `INTENT_TO_CODE_WORKSPACE_REGISTRY`, `SKIP_RUNTIME_SCRIPT`를 사용하지 않습니다.
+
+## 소스 개발과 설치
+
+저장소 루트에서:
+
+```bash
+npm ci --prefix plugins/paseo --ignore-scripts --no-audit --no-fund
+npm test --prefix plugins/paseo
+npm run typecheck --prefix plugins/paseo
+```
+
+trusted plugin을 허용한 Paseo daemon에 소스를 설치할 때:
 
 ```bash
 paseo plugin install /absolute/path/to/SKIP/plugins/paseo
 ```
 
-설치·재로드는 별도의 운영 작업입니다. 플러그인은 daemon에서 신뢰된 코드로 실행되며 설정한 기록 저장소를 읽습니다. 개인 기록과 `node_modules`는 포함하지 않습니다.
+설치, daemon reload, 실제 화면 수용은 각각 별도의 운영 작업입니다. 플러그인은 개인 SKIP 기록이나 `node_modules`를 번들하지 않습니다.
 
-| Daemon 환경 변수 | 용도 / 기본값 |
-|---|---|
-| `INTENT_TO_CODE_RECORD_ROOT` | 기록 루트; `$XDG_DATA_HOME/SKIP` 또는 `~/.local/share/SKIP` |
-| `INTENT_TO_CODE_WORKSPACE_REGISTRY` | Paseo 프로젝트 연결; `$XDG_CONFIG_HOME/intent-to-code/workspaces.yaml` 또는 `~/.config/intent-to-code/workspaces.yaml` |
-| `SKIP_RUNTIME_SCRIPT` | Decision Inbox용 Python backend; `~/.agents/skills/skip/scripts/intent_context.py` |
+## 신뢰와 검증 경계
 
-기록 프로젝트와 `bindings.paseo` 연결이 먼저 있어야 하며 override는 daemon의 환경에 설정합니다. 현재 플러그인의 프로젝트 식별은 이 정확한 registry 연결을 사용하며 Python selector의 모든 fallback을 제공하지 않습니다. 새 prepare/report의 UI 연결과 호스트 쓰기 차단은 포함하지 않습니다. 타입 선언은 로컬 검사 용도이고 실행 시 SDK는 Paseo가 제공합니다. 설치 후 desktop/mobile GUI 확인은 별도 검증입니다.
+플러그인은 daemon에서 신뢰된 코드로 실행되며 로컬 SKIP Core와 통신할 수 있습니다. 그렇다고 SKIP이 `host-enforced`가 되는 것은 아닙니다. 임의의 host write를 가로채지 않으며 같은 OS 사용자 코드의 격리를 주장하지 않습니다.
+
+자동 검사는 plugin tests, TypeScript, 지원 Paseo SDK 계열과의 compatibility compile을 다룹니다. 실제 desktop/mobile 시각 수용, 설치된 daemon 동작, interruption semantics, production 배포를 증명하지는 않습니다.
+
+현재 host/session handle은 ephemeral입니다. 일반 Core/MCP 접근만으로 인간 승인이나 검증된 사용자 턴을 만들어낼 수 없습니다.
+
+공통 런타임 모델은 [SQLite 공통 Core](db-core.md), 현재 자동 검증 표면은 [검증과 한계](verification.md)를 확인하세요.

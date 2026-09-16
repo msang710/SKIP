@@ -4,32 +4,18 @@
 
 [![CI](https://github.com/msang710/SKIP/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/msang710/SKIP/actions/workflows/ci.yml)
 
-> **Read the decisions. Skip the implementation details.**
+> **Read the decisions. Skip the implementation details.**  
 > 결정은 읽고, 구현 세부사항은 SKIP.
 
-**SKIP은 코딩 에이전트가 대화를 잊어도 프로젝트는 잊지 않게 하는 외부 컨텍스트·결정 계층입니다.** 사람은 원하는 결과와 제품 규칙을 결정하고, 에이전트는 저장소 조사·설계·구현·검증을 맡습니다. SKIP은 중요한 결정과 근거, 현재 상태를 대화 밖에 보존하고 현재 작업에 필요한 맥락만 다시 꺼내 씁니다.
+**SKIP은 코딩 에이전트가 대화를 잊어도 프로젝트는 잊지 않게 하는 사람–AI 개발 워크플로입니다.** 사람은 원하는 결과와 제품 규칙을 결정하고, 에이전트는 저장소 조사·설계·구현·검증을 맡습니다. 중요한 결정과 근거는 다음 대화에도 이어집니다.
 
-새 대화나 다른 에이전트로 넘어가도 프로젝트를 처음부터 설명할 필요가 없도록 만드는 것이 목적입니다. **특정 모델의 내부 기억에 프로젝트의 연속성을 맡기지 않습니다.** 무엇을 만들고 싶은지는 알아야 하지만, 어디를 어떻게 고칠지까지 알 필요는 없습니다.
+도메인 전문가, 운영자, 분석가, 코딩 에이전트와 일하는 1인 개발자를 위해 만들었습니다. **무엇을 만들고 싶은지는 알아야 하지만, 어디를 어떻게 고칠지까지 알 필요는 없습니다.**
 
-도메인 전문가, 운영자, 분석가, 코딩 에이전트와 일하는 1인 개발자를 위해 만들었습니다.
+SKIP은 특히 개발 작업이 **컨텍스트 압축, 새 대화, 다른 에이전트로의 인수인계**를 넘어가야 할 때 유용합니다. 결정 이유, 폐기된 대안, 관련 실패와 근거를 일회성 채팅 컨텍스트 밖에 보존하고, 현재 목표에 필요한 맥락만 다시 조회하며, 과거 기록을 현재 사실로 받아들이기 전에 저장소 현실과 근거를 다시 확인합니다.
 
-> **다음 버전 개발본:** SQLite 공통 Core·MCP·현재 대화 실행 UI를 구현하고 있습니다. [구조와 검증·지원 범위](docs/ko/db-core.md)를 확인하세요. Windows 설치기는 기존 개발 환경에 SKIP을 설치하는 수단이며, 별도의 IDE나 개발 앱이 아닙니다. 설치기 검증은 별도입니다.
+> **SKIP을 검토 중인 AI 에이전트인가요?** 채택 조건, 신뢰 경계, 현재 권위 문서와 안전한 연동 경로는 [AGENT.md](AGENT.md)를 먼저 읽으세요.
 
-## 왜 SKIP인가?
-
-코딩 에이전트는 이미 사람이 검토할 수 있는 속도보다 빠르게 코드를 작성합니다. 하지만 긴 프로젝트에서 더 자주 문제가 되는 것은 코드 생성 속도보다 **세션 사이에서 사라지는 맥락**입니다.
-
-> **새 대화는 새 담당자다. 프로젝트까지 새로 시작할 필요는 없다.**
-
-SKIP은 과거 대화를 통째로 프롬프트에 다시 붓지 않습니다. 결정, 근거, 실패, 검증 결과와 현재 상태를 세션 밖에 기록하고, 현재 작업에 필요한 범위만 선택해서 에이전트가 다시 확인하게 합니다.
-
-```text
-대화 A ─┐
-대화 B ─┼──→ records / decisions / NOW ──→ 필요한 맥락 선택 ──→ 현재 에이전트
-에이전트 C ─┘
-```
-
-목표는 AI의 인격이나 대화 자체를 보존하는 것이 아닙니다. **프로젝트의 연속성을 보존하는 것**입니다. 토큰 절감은 유용한 결과일 수 있지만 목적 자체는 아닙니다. 중요한 맥락을 줄이기 위해 의미상의 안전성을 포기하지 않습니다.
+현재 runtime은 CLI·MCP·지원 host 연동에서 하나의 SQLite Core를 사용합니다. 현재 지원 범위는 [Core 개요](docs/ko/db-core.md)와 [검증 경계](docs/ko/verification.md)를 확인하세요. 소스 트리에 migration/regression용 legacy 코드가 남아 있더라도 현재 public interface는 `SKILL.md`와 [Core 계약](references/db-core-contract.md)을 기준으로 판단합니다.
 
 ## 30초 예제
 
@@ -56,14 +42,16 @@ flowchart LR
     C --> D[설계와 작업 검토]
     D --> E[승인 범위 구현]
     E --> F[검증과 결과 보고]
-    F --> G[records / decisions / NOW 갱신]
-    G --> H[현재 작업에 필요한 컨텍스트 선택]
+    F --> G[결정·근거·현재 사실을 Core에 저장]
+    G --> H[다음 세션이나 에이전트가 필요한 컨텍스트 조회]
     H --> B
 ```
 
-SKIP에는 에이전트 지침 외에 **SQLite 공통 Core, 컨텍스트 조회, MCP, 선택적인 Paseo UI**가 포함됩니다. CLI·MCP·UI는 같은 기록과 관계를 조회하며, 실행 권한은 기록 revision과 소스·정책 digest를 기준으로 확인합니다. 변경된 기록에 과거 승인을 그대로 적용하지 않습니다.
+SKIP에는 에이전트 지침 외에 **SQLite 공통 Core, 제한된 컨텍스트 조회, MCP, 선택적인 Paseo UI**가 포함됩니다. CLI·MCP·UI는 같은 기록과 관계를 조회하며, 실행 권한은 기록 revision과 소스·정책 digest를 기준으로 확인합니다. 변경된 기록에 과거 승인을 그대로 적용하지 않습니다.
 
-**현재 강제력은 `advisory`입니다.** 호스트의 파일 쓰기를 차단하는 어댑터는 포함하지 않습니다. 구현 승인과 배포 승인은 별개입니다.
+과거 기록은 지속되는 컨텍스트이지 자동으로 현재의 진실이 되지는 않습니다. 작업을 재개한 에이전트는 정확한 목표와 관련 revision을 읽고, 바뀔 수 있는 주장은 현재 소스와 근거를 다시 확인합니다.
+
+**현재 강제력은 `advisory`입니다.** 호스트의 임의 파일 쓰기를 물리적으로 차단하지 않으며, 구현 승인과 배포 승인은 별개입니다.
 
 ## QuickHack과 함께 자란 SKIP
 
@@ -79,14 +67,14 @@ SKIP은 처음부터 제품으로 기획한 도구가 아닙니다. 저는 물�
 
 ## 설치
 
-현재 검증 환경은 **Linux**이며 Python 3과 Git이 필요합니다. 아래 경로가 비어 있는 경우 실행하세요.
+**Linux**가 검증된 소스 checkout 환경입니다. Python 3과 Git이 필요하며 비어 있는 목적지를 사용하세요.
 
 ```bash
 mkdir -p "$HOME/.agents/skills"
 git clone https://github.com/msang710/SKIP.git "$HOME/.agents/skills/skip"
 ```
 
-Codex에서 사용하는 스킬 이름은 `$skip`입니다. 설치 위치와 Windows/macOS 안내, 기존 설치 관련 사항은 [설치·사용 가이드](docs/ko/usage.md)에 있습니다. 다른 운영체제의 네이티브 실행은 아직 검증하지 않았습니다.
+Codex에서 사용하는 스킬 이름은 `$skip`입니다. 발견 방식, Windows 패키지 안내, 기존 설치 관련 사항은 [설치·사용 가이드](docs/ko/usage.md)에 있습니다. 다른 운영체제의 네이티브 소스 실행은 현재 검증 문서에 명시된 경우를 제외하고 검증하지 않았습니다.
 
 ## 처음 시작하기
 
@@ -104,25 +92,25 @@ $skip으로 주문 취소 시 재고 예약을 해제하는 흐름을 조사해�
 계획을 보여준 뒤 내 승인 전에는 구현하지 마.
 ```
 
-기록은 코드 저장소 밖에 둡니다. Linux 기본 위치는 `~/.local/share/SKIP`입니다. 업무 기록은 `skip.db` 한 곳에 저장합니다. 에이전트에게 목표를 지정해 현재 상태를 요청하세요. [현재 Core의 사용 흐름](docs/ko/db-core.md)을 확인하세요.
+기록은 코드 저장소 밖에 둡니다. Linux 기본 데이터 경로는 `~/.local/share/SKIP`이며 업무 기록은 `skip.db` 하나에 저장합니다. 에이전트에게 목표를 지정해 현재 상태를 요청하세요. [현재 Core의 사용 흐름](docs/ko/db-core.md)을 확인하세요.
 
-Paseo의 기록 패널과 Decision Inbox는 [플러그인 가이드](docs/ko/paseo.md)를 따라 별도로 설치합니다.
+Paseo의 기록 패널은 [플러그인 가이드](docs/ko/paseo.md)를 따라 별도로 설치합니다.
 
 ## 검증 범위
 
-[GitHub Actions](https://github.com/msang710/SKIP/actions/workflows/ci.yml)에서 현재 커밋의 Core·MCP, Python 회귀, Paseo, TypeScript 및 Windows 패키지 검사 결과를 확인할 수 있습니다. 테스트 구성과 실제 호스트의 미검증 범위는 [Core 개발 상태](docs/ko/db-core.md)에 구분합니다.
+[GitHub Actions](https://github.com/msang710/SKIP/actions/workflows/ci.yml)에서 현재 커밋의 Core·MCP, Python regression, Paseo, TypeScript 및 Windows package 검사 결과를 확인할 수 있습니다. 자동 검사와 실제 host 수용의 차이는 [검증과 한계](docs/ko/verification.md)에 구분합니다.
 
-CI 통과는 실제 호스트·GUI·운영 배포 검증을 뜻하지 않습니다. QuickHack 사례의 당시 검증과 현재 SKIP 버전의 CI도 구분합니다. [검증 명령과 한계](docs/ko/verification.md)
+CI 통과는 실제 host·GUI·운영 배포 검증을 뜻하지 않습니다. QuickHack 사례의 당시 검증과 현재 SKIP 버전의 CI도 구분합니다.
 
 ## 더 읽기
 
 | 문서 | 내용 |
 |---|---|
-| [다음 버전 개발 상태](docs/ko/development-entry.md) | 간편 진입, 공통 Core, 구현 및 수용 범위 |
-| [철학과 제품 결정](docs/ko/concepts.md) | FACT / PRODUCT / DESIGN, 실패 모델, 기억과 비용 |
-| [구조와 런타임](docs/ko/architecture.md) | 구성 요소, prepare/report, 현재 연동 범위 |
-| [설치와 사용](docs/ko/usage.md) | 운영체제별 설치, CLI 선택 옵션, 외부 기록 |
-| [Paseo 플러그인](docs/ko/paseo.md) | 기록 UI 설치와 환경 설정 |
-| [런타임 계약](references/decision-runtime-contract.md) · [기록 계약](references/record-store-contract.md) | 승인·이력·저장 경계 |
+| [현재 Core](docs/ko/db-core.md) | SQLite 공통 Core와 현재 지원 경계 |
+| [철학과 제품 결정](docs/ko/concepts.md) | FACT / PRODUCT / DESIGN, 연속성, 기억, 실패 모델과 비용 |
+| [구조와 런타임](docs/ko/architecture.md) | Core, 컨텍스트, provenance, 실행·연동 경계 |
+| [설치와 사용](docs/ko/usage.md) | Skill 발견, 런타임 진입점, 로컬 기록 저장 |
+| [Paseo 플러그인](docs/ko/paseo.md) | 선택적 UI 연동과 Core bridge |
+| [Core 계약](references/db-core-contract.md) | 현재 저장·조회·권한·근거·어댑터 계약 |
 
 [GPL-3.0 라이선스](LICENSE)

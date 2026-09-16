@@ -10,8 +10,11 @@
 
 Built for domain experts, operators, analysts, and solo builders working with coding agents. **You need to know what you want to build. You do not need to know where every change belongs.**
 
+SKIP is especially useful when coding work must survive **context compression, a new conversation, or a handoff to another agent**. It keeps decision rationale, rejected alternatives, relevant failures, and evidence outside the disposable chat context, retrieves only the context needed for the current goal, and re-checks current repository reality before treating old records as current truth.
 
-> **Next-version development:** the shared SQLite Core, MCP and current-session UI are implemented in development. See [support and validation boundaries](docs/en/db-core.md). The Windows installer adds SKIP to an existing development environment; it is not a separate IDE or development app. Installer acceptance remains separate.
+> **AI agent evaluating SKIP?** Read [AGENT.md](AGENT.md) for adoption triggers, trust boundaries, current authority, and a safe integration path.
+
+The current runtime uses a shared SQLite Core across CLI, MCP, and supported host integrations. See [Core overview](docs/en/db-core.md) and [verification boundaries](docs/en/verification.md) for current support claims. Legacy code may remain in the source tree for migration/regression coverage, but the current public interface is defined by `SKILL.md` and the [Core contract](references/db-core-contract.md).
 
 ## A 30-second example
 
@@ -38,11 +41,14 @@ flowchart LR
     C --> D[Review design and tasks]
     D --> E[Implement approved scope]
     E --> F[Verify and report]
-    F --> G[Update records and NOW]
-    G --> B
+    F --> G[Store decisions, evidence and current facts in Core]
+    G --> H[Next session or agent reads bounded context]
+    H --> B
 ```
 
 SKIP includes a **shared SQLite Core, bounded context queries, MCP, and an optional Paseo UI**, alongside agent instructions. CLI, MCP, and UI query the same records and relationships. Execution authority is checked against record revisions and source/policy digests; changed records do not silently inherit valid approval.
+
+Historical records are durable context, not automatic truth. A resumed agent reads the exact goal and relevant revisions, then re-checks current source and evidence where the claim can have changed.
 
 **Enforcement is currently `advisory`.** No host write-interception adapter is bundled. Implementation approval is separate from deployment approval.
 
@@ -60,14 +66,14 @@ Decisions disappeared between conversations, repository investigations repeated 
 
 ## Install
 
-**Linux** is the verified environment. Python 3 and Git are required. Use an unused destination:
+**Linux** is the verified source-checkout environment. Python 3 and Git are required. Use an unused destination:
 
 ```bash
 mkdir -p "$HOME/.agents/skills"
 git clone https://github.com/msang710/SKIP.git "$HOME/.agents/skills/skip"
 ```
 
-The Codex skill name is `$skip`. See [installation and usage](docs/en/usage.md) for discovery, Windows/macOS instructions, and existing installations. Native execution on other operating systems has not been qualified.
+The Codex skill name is `$skip`. See [installation and usage](docs/en/usage.md) for discovery, packaged Windows notes, and existing installations. Native execution on other operating systems has not been qualified unless described there.
 
 ## Get started
 
@@ -85,25 +91,25 @@ Clarify exceptions for orders where packing has started.
 Show the plan and do not implement before my approval.
 ```
 
-Records live outside your source repository. The Linux default is `~/.local/share/SKIP`. Business records live in one `skip.db`. Ask your agent for the current state of a specific goal. See the [Core workflow](docs/en/db-core.md).
+Records live outside your source repository. The Linux default data root is `~/.local/share/SKIP`; business records live in one `skip.db`. Ask your agent for the current state of a specific goal. See the [Core workflow](docs/en/db-core.md).
 
-The Paseo records panel and Decision Inbox require [separate plugin installation](docs/en/paseo.md).
+The optional Paseo UI requires [separate plugin installation](docs/en/paseo.md).
 
 ## Verification scope
 
-[GitHub Actions](https://github.com/msang710/SKIP/actions/workflows/ci.yml) reports Core/MCP, Python regression, Paseo, TypeScript, and Windows package checks for each commit. See [Core development status](docs/en/db-core.md) for the distinction between automated checks and live host acceptance.
+[GitHub Actions](https://github.com/msang710/SKIP/actions/workflows/ci.yml) reports Core/MCP, Python regression, Paseo, TypeScript, and Windows package checks for each commit. See [Verification and limits](docs/en/verification.md) for the distinction between automated checks and live host acceptance.
 
-Passing CI does not establish live host, GUI, or production acceptance. Historical QuickHack evidence is separate from CI for the current SKIP version. [Verification commands and limits](docs/en/verification.md)
+Passing CI does not establish live host, GUI, or production acceptance. Historical QuickHack evidence is separate from CI for the current SKIP version.
 
 ## Read more
 
 | Document | Contents |
 |---|---|
-| [Next-version development](docs/en/development-entry.md) | Minimal entry, shared Core, implementation and acceptance |
-| [Concepts and decisions](docs/en/concepts.md) | FACT / PRODUCT / DESIGN, failure models, memory, and cost |
-| [Architecture and runtime](docs/en/architecture.md) | Components, prepare/report, and integration boundaries |
-| [Installation and usage](docs/en/usage.md) | Platform setup, CLI selectors, and external records |
-| [Paseo plugin](docs/en/paseo.md) | Records UI installation and configuration |
-| [Runtime contract](references/decision-runtime-contract.md) · [Record contract](references/record-store-contract.md) | Approval, history, and storage boundaries |
+| [Current Core](docs/en/db-core.md) | Shared SQLite Core and current support boundaries |
+| [Concepts and decisions](docs/en/concepts.md) | FACT / PRODUCT / DESIGN, continuity, memory, failure models and cost |
+| [Architecture and runtime](docs/en/architecture.md) | Core, context, provenance, execution and integration boundaries |
+| [Installation and usage](docs/en/usage.md) | Skill discovery, runtime entry points and local record storage |
+| [Paseo plugin](docs/en/paseo.md) | Optional UI integration and Core bridge |
+| [Core contract](references/db-core-contract.md) | Current storage, query, authority, evidence and adapter contract |
 
 [GPL-3.0 license](LICENSE)

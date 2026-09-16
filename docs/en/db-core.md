@@ -1,13 +1,46 @@
-# Shared SQLite Core — development build
+# Shared SQLite Core
 
-Business records have one source of truth: SQLite. Explanations use TEXT; decisions, selections, requirements, plans, work and evidence have typed revision-qualified foreign keys. CLI, MCP and native UI use the same application API. There is no Markdown runtime dual writing or file fallback. A separately authorized offline migration preserves original bytes, sections and historical relationships without granting current authority.
+[SKIP](../../README.en.md) · [Architecture and runtime](architecture.md) · [Installation and usage](usage.md) · [Paseo plugin](paseo.md) · [Verification and limits](verification.md)
 
-Activation creates no goals. Goals start with real user requests. Goal/change risk and source snapshots determine workflow depth. Product choices persist, while host/workspace/provider/agent/thread/UI bindings stay in adapter memory. Only the currently verified native session can dispatch work. Unknown delivery is never automatically retried. Execution completion does not imply that required verification passed.
+SKIP has one runtime source of truth for business records: **SQLite through the Core application API**. There is no Markdown/YAML business-store fallback or dual writer in the active runtime.
 
-The development implementation includes 65 tables, immutable revisions, transactional commands, CAS/idempotency, bounded context queries, backup/restore, official MCP SDK tools/resources, an MCP Apps decision view, Codex current-turn provenance, a Paseo current-agent panel, and a pinned Windows Python/SQLite/MCP/UI bundle.
+Explanations remain human-readable text, while goals, decisions, selections, requirements, plans, work, evidence, learning, provenance, and lifecycle state use typed revision-qualified relationships. CLI, MCP, Codex integration, Paseo, and packaged entry points operate on the same Core model.
 
-Validation distinguishes Core tests, real SDK stdio tests, simulated host routing, package construction, live host use and visual acceptance. **Windows installer validation and live Paseo acceptance remain NOT_RUN.** Generic MCP support alone does not authenticate user approvals or start agent turns. Hosts lacking exact-message receipt lookup cannot automatically resolve uncertain delivery. Paseo's public SDK adapter does not provide atomic idle-conditioned sends or confirmed interruption.
+## Runtime principles
 
-Enforcement remains advisory: no host write interception or same-OS-user privilege isolation is claimed. The Linux skill and Paseo plugin have been locally deployed, with original records retained in an inactive backup. Remote repositories were not changed. Old file-runtime sources remain historical regression fixtures and are excluded from the new runtime package.
+- Activation connects a project/source; it does not invent goals from code, repository names, or agent memory.
+- New goals begin from actual user requests. Existing work resumes through an exact goal and fresh bounded context.
+- FACT, PRODUCT, and DESIGN remain distinct. Product choices belong to the human; technical design can be delegated within the authorized scope.
+- Goal/change risk, source snapshots, current record revisions, selections, policy, and provenance determine how much workflow is required.
+- Historical records are durable context, not automatic current truth, approval, or verification.
+- Execution completion and verification completion are separate states.
+- Unknown delivery is not automatically replayed into another host/session.
 
-See the [detailed Korean implementation and support contract](../ko/db-core.md) and [Core API reference](../../references/db-core-contract.md).
+## Current interfaces
+
+| Surface | Role | Boundary |
+|---|---|---|
+| `SKILL.md` | Agent-facing workflow and invocation rules | Advisory instructions; no physical host-write interception |
+| `skip_core` | Transactional application API, queries, revisions, authority, evidence, recovery | Sole live business-record writer |
+| `skip_mcp` | Official MCP tools/resources over the same Core | MCP access alone does not establish human approval |
+| Codex adapter | Current-turn provenance and native execution entry | Requires a verifiable current host session |
+| Paseo plugin | Workspace/current-agent views and native UI interaction over the Core | Live routing handles stay adapter-owned and ephemeral |
+| Windows bundle | Pinned Python + Core/MCP/UI/adapter package | Package construction is not installer/live-host acceptance |
+
+## Storage and recovery
+
+The data root is platform-local and outside the product repository. `SKIP_DATA_ROOT` can explicitly select a host data root; the default database is `skip.db`.
+
+Schema upgrades are explicit. Upgrade and validate a candidate copy before any separately authorized cutover. Do not run an older writer against a newer schema or fall back to the retired file runtime.
+
+SQLite backup uses the database backup API and integrity checks. Restore rehearses recovery into a new file; it does not silently overwrite or activate an existing database.
+
+One-time historical migration is a maintenance operation. It may preserve original bytes, text, relationships, states, and provenance, but imported history does not gain fresh approval, selections, execution authority, or current-source evidence.
+
+## Validation boundaries
+
+Automated validation distinguishes Core tests, MCP protocol tests, UI/package construction, Paseo TypeScript/plugin checks, and Windows bundled-runtime checks from **live host, installer, GUI, device, and production acceptance**.
+
+Passing CI is evidence only for the surfaces actually exercised by CI. Generic MCP support does not authenticate user approvals or create a verified host turn. Enforcement remains `advisory`; SKIP does not claim same-OS-user isolation or arbitrary host-write interception.
+
+For the authoritative runtime contract, read [references/db-core-contract.md](../../references/db-core-contract.md). For the current CI surfaces and commands, read [Verification and limits](verification.md).

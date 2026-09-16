@@ -2,18 +2,54 @@
 
 [SKIP](../../README.md) · [철학과 제품 결정](concepts.md) · [구조와 런타임](architecture.md) · [설치와 사용](usage.md) · [Paseo 플러그인](paseo.md)
 
-## 검증
+## 자동 CI 표면
 
-[GitHub Actions](https://github.com/msang710/SKIP/actions/workflows/ci.yml)에서 `main` push와 pull request마다 Python 테스트, Paseo 플러그인 테스트, TypeScript 검사를 실행합니다. CI 환경은 Ubuntu, Python 3.14, Node.js 24이며 실제 호스트 연동이나 GUI 동작 검증은 포함하지 않습니다.
+GitHub Actions는 `main` push, pull request, 수동 실행에서 동작합니다. 현재 workflow는 다음 근거 표면을 분리합니다.
 
-현재 소스는 **Linux / Python 3.14.7**에서 검증했습니다. 저장소 루트에서 실행합니다.
+### Python / Core
+
+Ubuntu 24.04, Python 3.14, Node.js 24에서:
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
-  scripts.test_intent_context scripts.test_decision_runtime scripts.test_decision_runtime_store \
-  scripts.test_workflow_runtime scripts.test_context_session scripts.test_workflow_report
+npm ci --prefix ui/mcp-app --ignore-scripts --no-audit --no-fund
+npm run build --prefix ui/mcp-app
+npm test --prefix ui/mcp-app
+python -m pip install -r requirements/core.txt -r requirements/maintenance.txt
+python -m unittest discover -s tests -t . -p 'test_*.py' -v
 ```
 
-전체 **94개 테스트**는 기존 selector/context/gate 회귀와 승인 재사용·만료·철회, 소스 변경, 보고 근거, 캐시 격리·손상·동시 쓰기를 포함합니다.
+CI는 보존된 legacy Python regression suite도 실행합니다. 이 테스트는 migration/regression 보호용이며 **현재 runtime 문서가 아닙니다.** 퇴역한 file-runtime 진입점을 현재 지원 인터페이스로 만들지 않습니다.
 
-문서 4개를 사용하는 synthetic fixture에서는 cold 본문 파싱 4회, warm 재파싱 0회에 같은 문서 Context Pack을 반환했습니다. 두 호출 모두 현재 gate와 원본 해시를 다시 확인했습니다. 일반적인 속도·토큰 절감률을 입증한 것은 아니며, 실제 호스트 대화 품질·GUI·쓰기 차단은 별도로 검증해야 합니다.
+### Paseo
+
+Ubuntu 24.04 / Node.js 24에서:
+
+```bash
+npm ci --prefix plugins/paseo --ignore-scripts --no-audit --no-fund
+npm test --prefix plugins/paseo
+npm run typecheck --prefix plugins/paseo
+```
+
+별도 compatibility job은 지원하는 Paseo 0.8 SDK 계열을 대상으로 plugin compile을 확인합니다.
+
+### Windows bundled Core
+
+Windows Server 2025에서 고정 Windows 패키지를 만들고 압축을 푼 뒤 `PATH`를 비운 상태에서 **동봉 Python interpreter**로 Core/MCP contract test를 실행합니다. 이는 패키지 생성과 제한된 bundled-runtime 표면을 검증하며, 실제 desktop host에 SKIP을 설치하는 사용자 여정과는 다릅니다.
+
+## CI가 증명하지 않는 것
+
+CI 통과만으로 다음을 주장할 수 없습니다.
+
+- 실제 Codex/Paseo host 수용,
+- installer UX와 upgrade 동작,
+- GUI/시각 수용,
+- 물리 장치 동작,
+- production 배포·운영 안전성,
+- 임의 host write 차단,
+- 같은 OS 사용자 보안 격리.
+
+근거는 실제로 확인한 표면에만 연결합니다. source test는 GUI 근거가 아니고, package 생성은 installation 근거가 아니며, 실행 성공은 모든 필수 검증의 통과를 뜻하지 않습니다.
+
+## 현재 runtime 권위
+
+현재 runtime 계약은 [references/db-core-contract.md](../../references/db-core-contract.md), 공개 개요는 [SQLite 공통 Core](db-core.md)를 사용하세요. 퇴역 script가 migration/regression 목적으로 소스 트리에 남아 있더라도 그 역사적 인터페이스는 현재 실행 지침이 아닙니다.

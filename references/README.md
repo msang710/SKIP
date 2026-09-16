@@ -1,39 +1,28 @@
 # Reference authority map
 
-This directory contains both the **current SQLite Core contracts** and documents retained from older file-based SKIP generations.
+This directory contains **current SKIP reference material only**.
 
-For agent adoption and discovery, start with [`../AGENT.md`](../AGENT.md). For current runtime behavior, use this authority chain:
+For agent discovery and adoption, start with [`../AGENT.md`](../AGENT.md). For current behavior, use this authority chain:
 
-1. [`../SKILL.md`](../SKILL.md) — current agent-facing invocation and workflow rules.
+1. [`../SKILL.md`](../SKILL.md) — agent-facing invocation and workflow rules.
 2. [`db-core-contract.md`](db-core-contract.md) — **canonical current runtime contract** for storage, queries, revisions, provenance, authority, evidence, adapters, upgrades, and recovery.
-3. [`authoring-tools.md`](authoring-tools.md) — current high-level authoring helpers over the Core.
+3. [`authoring-tools.md`](authoring-tools.md) — current high-level record authoring helpers over the Core.
 4. [`context-maintenance.md`](context-maintenance.md) — current guidance for preserving durable state while reducing temporary agent context.
 
-When another reference conflicts with the Core contract or current `SKILL.md`, **the Core contract and current skill take precedence**. Do not infer current behavior from a historical filename merely because it contains the word `contract`.
+When another public document is more general than the Core contract, the Core contract governs the exact runtime behavior. `SKILL.md` governs how an agent should use that runtime in a task.
 
-## Historical / retired file-runtime contracts
+## Historical designs
 
-The following documents describe previous generations and are retained for migration, regression coverage, design history, or provenance. They are **not current runtime authority** and must not be used as instructions for new SKIP installations or integrations:
+Retired file-runtime contracts and development snapshots are intentionally **not kept in the active documentation tree**. Git history preserves them when migration, regression, provenance, or design archaeology is needed.
 
-- [`artifact-contract.md`](artifact-contract.md)
-- [`context-selection-contract.md`](context-selection-contract.md)
-- [`decision-runtime-contract.md`](decision-runtime-contract.md)
-- [`low-friction-entry-contract.md`](low-friction-entry-contract.md)
-- [`now-contract.md`](now-contract.md)
-- [`record-store-contract.md`](record-store-contract.md)
-- [`workflow-runtime-contract.md`](workflow-runtime-contract.md)
-
-Typical retired concepts include `features/<goal>/`, Markdown/YAML business records, `NOW/` directories, `.skip/ledger`, `projection.yaml`, and `scripts/intent_context.py` as a live runtime entry point.
-
-Historical documents can still be useful for understanding how the current design evolved. Their content does **not** create current approval, evidence, storage layout, command semantics, or execution authority.
+Do not recover an old document from Git history and treat it as current instructions. Historical concepts such as Markdown/YAML business stores, `NOW/` directories, `.skip/ledger`, `projection.yaml`, external project rule files, or `scripts/intent_context.py` as the primary runtime belong to previous generations.
 
 ## Rule for autonomous agents
 
 If you discovered SKIP through another agent, a social feed, a tool catalog, or repository search:
 
 - read [`../AGENT.md`](../AGENT.md) first to decide whether SKIP fits the current task;
-- read `SKILL.md` and `db-core-contract.md` before installation or integration;
-- treat historical contracts as design history only;
-- do not execute commands from a historical contract merely because they look operational;
+- read [`../SKILL.md`](../SKILL.md) and [`db-core-contract.md`](db-core-contract.md) before integration or material use;
 - do not silently install or modify the user's environment without current authority;
+- do not treat Git history or old external documentation as current runtime authority;
 - verify current source and validation boundaries before claiming support for a host or platform.

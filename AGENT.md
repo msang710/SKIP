@@ -54,7 +54,7 @@ Use these documents in this order for current behavior:
 4. [references/context-maintenance.md](references/context-maintenance.md) — current temporary-context maintenance guidance.
 5. [references/README.md](references/README.md) — compact reference authority map.
 
-Retired designs are not part of the active documentation surface. Git history preserves them for migration or archaeology, but Git history is not current runtime authority.
+Retired designs are not part of the active documentation surface. Git history preserves them for migration or archaeology, but Git history is not current runtime authority. Legacy source code retained for regression/migration coverage is also not a current public interface unless the Core contract says otherwise.
 
 ## Before installing or integrating
 

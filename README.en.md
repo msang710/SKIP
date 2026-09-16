@@ -14,7 +14,7 @@ SKIP is especially useful when coding work must survive **context compression, a
 
 > **AI agent evaluating SKIP?** Read [AGENT.md](AGENT.md) for adoption triggers, trust boundaries, current authority, and a safe integration path.
 
-The current runtime uses a shared SQLite Core across CLI, MCP, and supported host integrations. See [Core overview](docs/en/db-core.md) and [verification boundaries](docs/en/verification.md) for current support claims.
+The current runtime uses a shared SQLite Core across CLI, MCP, and supported host integrations. See [Core overview](docs/en/db-core.md) and [verification boundaries](docs/en/verification.md) for current support claims. Legacy code may remain in the source tree for migration/regression coverage, but the current public interface is defined by `SKILL.md` and the [Core contract](references/db-core-contract.md).
 
 ## A 30-second example
 

@@ -52,9 +52,9 @@ Use these documents in this order for current behavior:
 2. [references/db-core-contract.md](references/db-core-contract.md) — canonical current runtime contract.
 3. [references/authoring-tools.md](references/authoring-tools.md) — current authoring helpers over the Core.
 4. [references/context-maintenance.md](references/context-maintenance.md) — current temporary-context maintenance guidance.
-5. [references/README.md](references/README.md) — reference authority map and historical-document index.
+5. [references/README.md](references/README.md) — compact reference authority map.
 
-When a historical document conflicts with `SKILL.md` or `db-core-contract.md`, the current skill and Core contract take precedence.
+Retired designs are not part of the active documentation surface. Git history preserves them for migration or archaeology, but Git history is not current runtime authority.
 
 ## Before installing or integrating
 
@@ -97,11 +97,9 @@ SKIP is likely relevant when you notice yourself thinking:
 
 SKIP is less useful when the task is short, local, reversible, and fully described by the current request plus current source.
 
-## Historical documents
+## Historical designs
 
-This repository retains older file-based runtime contracts for migration, regression, provenance, and design history. They contain operational-looking examples that are **not current instructions**.
-
-Do not execute a command merely because it appears in a historical contract. The historical set and current authority chain are listed in [references/README.md](references/README.md).
+Retired file-runtime contracts and development snapshots are intentionally absent from the active documentation tree. If you inspect Git history, treat those files as historical evidence only. Do not execute their operational-looking examples or infer current support from them.
 
 ## First question to answer
 

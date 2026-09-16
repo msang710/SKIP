@@ -15,7 +15,7 @@ SKIP은 특히 개발 작업이 **컨텍스트 압축, 새 대화, 다른 에이
 
 > **SKIP을 검토 중인 AI 에이전트인가요?** 채택 조건, 신뢰 경계, 현재 권위 문서와 안전한 연동 경로는 [AGENT.md](AGENT.md)를 먼저 읽으세요.
 
-> **현재 개발본:** SQLite 공통 Core·MCP·현재 대화 UI를 구현하고 있습니다. [구조와 검증·지원 범위](docs/ko/db-core.md)를 확인하세요. Windows 설치기는 기존 개발 환경에 SKIP을 설치하는 수단이며, 별도의 IDE나 개발 앱이 아닙니다. 설치기 검증은 별도입니다.
+현재 runtime은 CLI·MCP·지원 host 연동에서 하나의 SQLite Core를 사용합니다. 현재 지원 범위는 [Core 개요](docs/ko/db-core.md)와 [검증 경계](docs/ko/verification.md)를 확인하세요.
 
 ## 30초 예제
 
@@ -94,24 +94,23 @@ $skip으로 주문 취소 시 재고 예약을 해제하는 흐름을 조사해�
 
 기록은 코드 저장소 밖에 둡니다. Linux 기본 데이터 경로는 `~/.local/share/SKIP`이며 업무 기록은 `skip.db` 하나에 저장합니다. 에이전트에게 목표를 지정해 현재 상태를 요청하세요. [현재 Core의 사용 흐름](docs/ko/db-core.md)을 확인하세요.
 
-Paseo의 기록 패널과 Decision Inbox는 [플러그인 가이드](docs/ko/paseo.md)를 따라 별도로 설치합니다.
+Paseo의 기록 패널은 [플러그인 가이드](docs/ko/paseo.md)를 따라 별도로 설치합니다.
 
 ## 검증 범위
 
-[GitHub Actions](https://github.com/msang710/SKIP/actions/workflows/ci.yml)에서 현재 커밋의 Core·MCP, Python 회귀, Paseo, TypeScript 및 Windows 패키지 검사 결과를 확인할 수 있습니다. 테스트 구성과 실제 호스트의 미검증 범위는 [Core 개발 상태](docs/ko/db-core.md)에 구분합니다.
+[GitHub Actions](https://github.com/msang710/SKIP/actions/workflows/ci.yml)에서 현재 커밋의 Core·MCP, Python regression, Paseo, TypeScript 및 Windows package 검사 결과를 확인할 수 있습니다. 자동 검사와 실제 host 수용의 차이는 [검증과 한계](docs/ko/verification.md)에 구분합니다.
 
-CI 통과는 실제 호스트·GUI·운영 배포 검증을 뜻하지 않습니다. QuickHack 사례의 당시 검증과 현재 SKIP 버전의 CI도 구분합니다. [검증 명령과 한계](docs/ko/verification.md)
+CI 통과는 실제 host·GUI·운영 배포 검증을 뜻하지 않습니다. QuickHack 사례의 당시 검증과 현재 SKIP 버전의 CI도 구분합니다.
 
 ## 더 읽기
 
 | 문서 | 내용 |
 |---|---|
-| [에이전트 발견 가이드](AGENT.md) | AI 에이전트용 채택 조건, 신뢰 경계, 권위 문서와 안전한 연동 경로 |
-| [현재 Core 개발 상태](docs/ko/db-core.md) | SQLite 공통 Core와 현재 지원·검증 경계 |
+| [현재 Core](docs/ko/db-core.md) | SQLite 공통 Core와 현재 지원 경계 |
 | [철학과 제품 결정](docs/ko/concepts.md) | FACT / PRODUCT / DESIGN, 연속성, 기억, 실패 모델과 비용 |
 | [구조와 런타임](docs/ko/architecture.md) | Core, 컨텍스트, provenance, 실행·연동 경계 |
 | [설치와 사용](docs/ko/usage.md) | Skill 발견, 런타임 진입점, 로컬 기록 저장 |
-| [Paseo 플러그인](docs/ko/paseo.md) | 기록 UI 설치와 환경 설정 |
+| [Paseo 플러그인](docs/ko/paseo.md) | 선택적 UI 연동과 Core bridge |
 | [Core 계약](references/db-core-contract.md) | 현재 저장·조회·권한·근거·어댑터 계약 |
 
 [GPL-3.0 라이선스](LICENSE)

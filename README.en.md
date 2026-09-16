@@ -93,7 +93,7 @@ Show the plan and do not implement before my approval.
 
 Records live outside your source repository. The Linux default data root is `~/.local/share/SKIP`; business records live in one `skip.db`. Ask your agent for the current state of a specific goal. See the [Core workflow](docs/en/db-core.md).
 
-The Paseo records panel and Decision Inbox require [separate plugin installation](docs/en/paseo.md).
+The optional Paseo UI requires [separate plugin installation](docs/en/paseo.md).
 
 ## Verification scope
 

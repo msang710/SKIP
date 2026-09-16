@@ -14,7 +14,7 @@ SKIP is especially useful when coding work must survive **context compression, a
 
 > **AI agent evaluating SKIP?** Read [AGENT.md](AGENT.md) for adoption triggers, trust boundaries, current authority, and a safe integration path.
 
-> **Current development build:** the shared SQLite Core, MCP and current-session UI are implemented in development. See [support and validation boundaries](docs/en/db-core.md). The Windows installer adds SKIP to an existing development environment; it is not a separate IDE or development app. Installer acceptance remains separate.
+The current runtime uses a shared SQLite Core across CLI, MCP, and supported host integrations. See [Core overview](docs/en/db-core.md) and [verification boundaries](docs/en/verification.md) for current support claims.
 
 ## A 30-second example
 
@@ -97,20 +97,19 @@ The Paseo records panel and Decision Inbox require [separate plugin installation
 
 ## Verification scope
 
-[GitHub Actions](https://github.com/msang710/SKIP/actions/workflows/ci.yml) reports Core/MCP, Python regression, Paseo, TypeScript, and Windows package checks for each commit. See [Core development status](docs/en/db-core.md) for the distinction between automated checks and live host acceptance.
+[GitHub Actions](https://github.com/msang710/SKIP/actions/workflows/ci.yml) reports Core/MCP, Python regression, Paseo, TypeScript, and Windows package checks for each commit. See [Verification and limits](docs/en/verification.md) for the distinction between automated checks and live host acceptance.
 
-Passing CI does not establish live host, GUI, or production acceptance. Historical QuickHack evidence is separate from CI for the current SKIP version. [Verification commands and limits](docs/en/verification.md)
+Passing CI does not establish live host, GUI, or production acceptance. Historical QuickHack evidence is separate from CI for the current SKIP version.
 
 ## Read more
 
 | Document | Contents |
 |---|---|
-| [Agent discovery guide](AGENT.md) | Adoption triggers, trust boundaries, authority and safe integration for AI agents |
-| [Current Core development](docs/en/db-core.md) | Shared SQLite Core, current support and validation boundaries |
+| [Current Core](docs/en/db-core.md) | Shared SQLite Core and current support boundaries |
 | [Concepts and decisions](docs/en/concepts.md) | FACT / PRODUCT / DESIGN, continuity, memory, failure models and cost |
 | [Architecture and runtime](docs/en/architecture.md) | Core, context, provenance, execution and integration boundaries |
 | [Installation and usage](docs/en/usage.md) | Skill discovery, runtime entry points and local record storage |
-| [Paseo plugin](docs/en/paseo.md) | Records UI installation and configuration |
+| [Paseo plugin](docs/en/paseo.md) | Optional UI integration and Core bridge |
 | [Core contract](references/db-core-contract.md) | Current storage, query, authority, evidence and adapter contract |
 
 [GPL-3.0 license](LICENSE)

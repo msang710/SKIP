@@ -2,18 +2,54 @@
 
 [SKIP](../../README.en.md) · [Concepts and decisions](concepts.md) · [Architecture and runtime](architecture.md) · [Installation and usage](usage.md) · [Paseo plugin](paseo.md)
 
-## Verification
+## Automated CI surfaces
 
-[GitHub Actions](https://github.com/msang710/SKIP/actions/workflows/ci.yml) runs Python tests, Paseo plugin tests, and TypeScript checks on pushes to `main` and pull requests. CI uses Ubuntu, Python 3.14, and Node.js 24. It does not verify live host integration or GUI behavior.
+GitHub Actions runs on pushes to `main`, pull requests, and manual dispatch. The current workflow separates the following evidence surfaces:
 
-The current source was checked on **Linux with Python 3.14.7**. Run the suite from the repository root:
+### Python / Core
+
+Ubuntu 24.04 with Python 3.14 and Node.js 24:
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
-  scripts.test_intent_context scripts.test_decision_runtime scripts.test_decision_runtime_store \
-  scripts.test_workflow_runtime scripts.test_context_session scripts.test_workflow_report
+npm ci --prefix ui/mcp-app --ignore-scripts --no-audit --no-fund
+npm run build --prefix ui/mcp-app
+npm test --prefix ui/mcp-app
+python -m pip install -r requirements/core.txt -r requirements/maintenance.txt
+python -m unittest discover -s tests -t . -p 'test_*.py' -v
 ```
 
-The suite contains **94 tests**, including approval reuse/staleness, revoked goals, bounded selection, source changes, report evidence, and cache isolation/corruption/concurrent writes. The original selection/context/gate tests remain in the suite.
+CI also runs the retained legacy Python regression suite. Those tests protect migration/regression behavior; they are **not current runtime documentation** and do not make retired file-runtime entry points supported interfaces.
 
-In a synthetic four-document fixture, cold parsing handled four documents and a warm call reparsed none while producing the same document Context Pack. Both calls still evaluated current gates and read original hashes. This is not a general speed or token-saving benchmark. Real-host conversation quality, GUI acceptance and pre-write enforcement require separate evidence.
+### Paseo
+
+On Ubuntu 24.04 / Node.js 24, CI runs:
+
+```bash
+npm ci --prefix plugins/paseo --ignore-scripts --no-audit --no-fund
+npm test --prefix plugins/paseo
+npm run typecheck --prefix plugins/paseo
+```
+
+A separate compatibility job compiles the plugin against the supported Paseo 0.8 SDK line.
+
+### Windows bundled Core
+
+On Windows Server 2025, CI builds the pinned Windows package, expands it, clears `PATH`, and runs Core/MCP contract tests through the **bundled Python interpreter**. This verifies package construction and a bounded bundled-runtime surface; it is not the same as installing SKIP into a real desktop host.
+
+## What CI does not prove
+
+Passing CI does **not** establish:
+
+- live Codex/Paseo host acceptance,
+- installer UX or upgrade behavior,
+- GUI/visual acceptance,
+- physical device behavior,
+- production deployment or operational safety,
+- arbitrary host-write interception,
+- same-OS-user security isolation.
+
+Evidence must stay attached to the surface that produced it. Source tests do not become GUI evidence; package construction does not become installation evidence; a successful execution does not imply every required verification passed.
+
+## Current runtime authority
+
+Use [references/db-core-contract.md](../../references/db-core-contract.md) for the current runtime contract and [Shared SQLite Core](db-core.md) for the public overview. Retired scripts may remain in the source tree for regression/migration coverage, but their historical interfaces are not current runtime instructions.

@@ -15,7 +15,7 @@ SKIP은 특히 개발 작업이 **컨텍스트 압축, 새 대화, 다른 에이
 
 > **SKIP을 검토 중인 AI 에이전트인가요?** 채택 조건, 신뢰 경계, 현재 권위 문서와 안전한 연동 경로는 [AGENT.md](AGENT.md)를 먼저 읽으세요.
 
-현재 runtime은 CLI·MCP·지원 host 연동에서 하나의 SQLite Core를 사용합니다. 현재 지원 범위는 [Core 개요](docs/ko/db-core.md)와 [검증 경계](docs/ko/verification.md)를 확인하세요.
+현재 runtime은 CLI·MCP·지원 host 연동에서 하나의 SQLite Core를 사용합니다. 현재 지원 범위는 [Core 개요](docs/ko/db-core.md)와 [검증 경계](docs/ko/verification.md)를 확인하세요. 소스 트리에 migration/regression용 legacy 코드가 남아 있더라도 현재 public interface는 `SKILL.md`와 [Core 계약](references/db-core-contract.md)을 기준으로 판단합니다.
 
 ## 30초 예제
 
